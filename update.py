@@ -38,7 +38,7 @@ sourcesData = [
         "parser": GithubParser,
         "kwargs": {"repo_author": "Odyssey-Team", "repo_name": "Taurine"},
         #"kwargs": {"filepath": "https://taurine.app/altstore/taurinestore.json"},
-        "ids": ["com.odysseyteam.taurine"]
+        "ids": ["org.coolstar.taurine"]
     },
     {
         "parser": AltSourceParser,
@@ -69,7 +69,7 @@ sourcesData = [
     {
         "parser": GithubParser,
         "kwargs": {"repo_author": "brandonplank", "repo_name": "flappybird"},
-        "ids": ["org.brandonplank.flappybird15"]
+        "ids": ["org.brandonplank.flappybird"]
     },
     {
         "parser": GithubParser,
@@ -125,11 +125,19 @@ sourcesData = [
     },
     {
         "parser": GithubParser,
-        "kwargs": {"repo_author": "n3d1117", "repo_name": "appdb"},
+        "kwargs": {"repo_author": "n3d1117", "repo_name": "appdb", "prefer_date": True},
         "ids": ["it.ned.appdb-ios"]
+    },
+    {
+        "parser": AltSourceParser,
+        "kwargs": {"filepath": "https://pokemmo.eu/altstore/"},
+        "ids": ["eu.pokemmo.client"]
     }
 ]
 alternateAppData = {
+    "eu.pokemmo.client": {
+        "beta": False
+    },
     "com.flyinghead.Flycast": {
       "localizedDescription": "Flycast is a multi-platform Sega Dreamcast, Naomi and Atomiswave emulator derived from reicast.\nInformation about configuration and supported features can be found on TheArcadeStriker's [flycast wiki](https://github.com/TheArcadeStriker/flycast-wiki/wiki).",
       "screenshotURLs": ["https://i.imgur.com/47KjD5a.png", "https://i.imgur.com/MfhD1h1.png", "https://i.imgur.com/wO88IVP.png"]
@@ -188,8 +196,7 @@ alternateAppData = {
 
 quantumsrc = AltSourceManager("quantumsource.json", sourcesData, alternateAppData, prettify=False) # if prettify is true, output will have indents and newlines
 try:
-    #quantumsrc.update()
-    pass
+    quantumsrc.update()
 except Exception as err:
     logging.error(f"Unable to update {quantumsrc.src.name}.")
     logging.error(f"{type(err).__name__}: {str(err)}")
@@ -234,7 +241,7 @@ sourcesData = [
     {
         "parser": AltSourceParser,
         "kwargs": {"filepath": "quarksource++.json"},
-        "ids": ["com.crunchyroll.iphone", "com.duolingo.DuolingoMobile", "com.deezer.Deezer", "com.spotify.client", "syto203.reddit.pp", "com.antique.Popcorn-iOS", "mediaboxhd.event.2", "comicreader.net.ios", "com.channelsapp.channels", "com.Lema.Michael.InstagramApp", "net.whatsapp.WhatsApp", "com.hotdog.popcorntime81.ios", "tv.twitch"]
+        "ids": ["com.crunchyroll.iphone", "com.duolingo.DuolingoMobile", "com.deezer.Deezer", "com.spotify.client", "syto203.reddit.pp", "com.antique.Popcorn", "mediaboxhd.event.2", "comicreader.net.ios", "com.channelsapp.channels", "com.Lema.Michael.InstagramApp", "net.whatsapp.WhatsApp", "com.hotdog.popcorntime81.ios", "tv.twitch"]
     },
     {
         "parser": AltSourceParser,
@@ -369,3 +376,25 @@ try:
 except Exception as err:
     logging.error(f"Unable to update {quantumsrc_plus.src.name}.")
     logging.error(f"{type(err).__name__}: {str(err)}")
+
+sourcesData = [
+  {
+    "parser": AltSourceParser,
+    "kwargs": {"filepath": "https://qnblackcat.github.io/AltStore/apps.json"},
+    "ids": ["com.google.ios.youtubecercube"]
+  }
+]
+
+alt_data = {
+	"com.google.ios.youtubecercube": {
+		"bundleIdentifier": "com.google.ios.youtube"
+	}
+}
+
+cercube = AltSourceManager("cercube.json", sourcesData, alt_data, prettify=False)
+try:
+    cercube.update()
+except Exception as err:
+    logging.error(f"Unable to update {cercube.src.name}.")
+    logging.error(f"{type(err).__name__}: {str(err)}")
+    
