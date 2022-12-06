@@ -1,6 +1,6 @@
 [project]
 name = "altparse"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
     {name = "Noah Keck", email="noahkeck@mindspring.com"}
 ]
@@ -15,10 +15,8 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "requests",
-    "zipfile",
-    "plistlib",
-    "github3"
+    "requests>=2.28.0",
+    "github3.py>=3.2.0"
 ]
 
 [project.urls]
@@ -32,3 +30,6 @@ requires = ["setuptools>=61.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
+
+[tool.setuptools.packages.find]
+where = ["src"]
