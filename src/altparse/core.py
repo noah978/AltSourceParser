@@ -237,7 +237,7 @@ class AltSourceManager:
             alternate_dir (Path | str | None, optional): _description_. Defaults to None.
         """
         full_src = self.src.to_dict()
-        with open(self.src.path, "w", encoding="utf-8") as fp:
+        with open(alternate_dir or self.src.path, "w", encoding="utf-8") as fp:
             json.dump(full_src, fp, indent = 2 if prettify else None)
             fp.write("\n") # add missing newline to EOF
     
