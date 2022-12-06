@@ -9,12 +9,12 @@ Copyright (c) 2022
 :------------------------------------------------------------------------------:
 """
 
-import logging
 import json
-
-from errors import *
+import logging
 from pathlib import Path
-from helpers import fmt_github_datetime, utcnow
+
+from altparse.errors import *
+from altparse.helpers import fmt_github_datetime, utcnow
 
 # Create a helper class in the namespace that acts as an intermediary to the logging.info to optionally silence the AltSource creation help text
 # OR remove the info help text from the model entirely and place in the cli instead
@@ -37,7 +37,7 @@ class AltSource:
                     src = {}
             
             def to_dict(self) -> dict[str]:
-                ret = self._src
+                ret = self._src.copy()
                 ret = {k:v for (k,v) in ret.items() if ret.get(k) is not None}
                 return ret
             
@@ -101,7 +101,7 @@ class AltSource:
                     src = {}
             
             def to_dict(self) -> dict[str]:
-                ret = self._src
+                ret = self._src.copy()
                 ret = {k:v for (k,v) in ret.items() if ret.get(k) is not None}
                 return ret
             
@@ -214,7 +214,7 @@ class AltSource:
                     logging.warning(f"Missing required AltSource.App keys: {missing_keys}")
         
         def to_dict(self) -> dict[str]:
-            ret = self._src
+            ret = self._src.copy()
             if "permissions" in self._src.keys():
                 ret["permissions"] = [perm.to_dict() for perm in self.permissions]
             if "versions" in self._src.keys():
@@ -422,7 +422,7 @@ class AltSource:
                     logging.warning(f"Missing required AltSource.Article keys: {missing_keys}")
             
         def to_dict(self) -> dict[str]:
-            ret = self._src
+            ret = self._src.copy()
             ret = {k:v for (k,v) in ret.items() if ret.get(k) is not None}
             return ret
         
@@ -547,7 +547,7 @@ class AltSource:
             self.path = None
     
     def to_dict(self) -> dict[str]:
-        ret = self._src
+        ret = self._src.copy()
         ret["apps"] = [app.to_dict() for app in self.apps]
         if "news" in self._src.keys():
             ret["news"] = [art.to_dict() for art in self.news]
