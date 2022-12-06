@@ -1,0 +1,34 @@
+[project]
+name = "altparse"
+version = "0.0.1"
+authors = [
+    {name = "Noah Keck", email="noahkeck@mindspring.com"}
+]
+license = {file = "LICENSE.txt"}
+description = "Designed to aid in creating and maintaining AltSources"
+readme = "README.md"
+keywords = ["altstore", "altsource", "ios", "developer"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+requires-python = ">=3.10"
+dependencies = [
+    "requests",
+    "zipfile",
+    "plistlib",
+    "github3"
+]
+
+[project.urls]
+homepage = "https://github.com/noah978/AltSourceParser"
+repository = "https://github.com/noah978/AltSourceParser"
+issues = "https://github.com/noah978/AltSourceParser/issues"
+docs = "https://github.com/noah978/AltSourceParser"
+
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
