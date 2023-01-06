@@ -202,9 +202,17 @@ class GithubParser:
             asset = sorted(assets, key=lambda x: parse_github_datetime(x["updated_at"]))[-1] # gets most recently updated ipa
             release["asset"] = asset # set asset in the release to only be most recently IPA found
             
-        def alter_tag_name(release):
-            release["tag_name"] = ver_parse(release["tag_name"])
+        def alter_tag_names(releases: list):
+            for index, release in enumerate(releases):
+                alter_tag_name(release)
+                ver = version.parse(release["tag_name"])
+                if isinstance(ver, version.LegacyVersion):
+                    logging.warning(f"Invalid version removed: {ver.base_version}")
+                    releases.pop(index)
 
+        def alter_tag_name(release: dict):
+            release["tag_name"] = ver_parse(release["tag_name"])
+        
         #### Parse the correct release ####
         if not include_pre:
             releases = list(filter(lambda x: x["prerelease"] != True, releases)) # filter out prereleases
@@ -215,7 +223,8 @@ class GithubParser:
             alter_tag_name(self.data)
         else:
             # alter the github release tags to match AltStore version tags
-            for x in releases: alter_tag_name(x) 
+            # strip out any invalid versions
+            alter_tag_names(releases)
             self.data = sorted(releases, key=lambda x: version.parse(x["tag_name"]))[-1] # only grab the release with the highest version
             match_asset(self.data)
 
