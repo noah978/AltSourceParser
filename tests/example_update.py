@@ -143,10 +143,7 @@ alternateAppData = {
 
 src = altsource_from_file("quantumsource.json")
 srcmgr = AltSourceManager(src, sourcesData)
-try:
-    srcmgr.update()
-    srcmgr.alter_app_info(alternateAppData)
-    srcmgr.save(prettify=True) # if prettify is true, output will have indents and newlines
-except Exception as err:
-    logging.error(f"Unable to update {srcmgr.src.name}.")
-    logging.error(f"{type(err).__name__}: {str(err)}")
+
+srcmgr.update()
+srcmgr.alter_app_info(alternateAppData)
+srcmgr.save(prettify=True) # if prettify is true, output will have indents and newlines
