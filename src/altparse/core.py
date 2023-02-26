@@ -197,11 +197,7 @@ class AltSourceManager:
                 errstr = str(err).replace('\n', '\n\t') #indent newlines for prettier printing
                 logging.error(f"{type(err).__name__}: {errstr[:300]}...") #only print first 300 chars
                 continue
-            except version.InvalidVersion as err:
-                logging.error(f"Unable to process {data.get('ids')}.")
-                logging.error(f"{type(err).__name__}: {str(err)}")
-                continue
-            except (requests.RequestException, requests.ConnectionError, GitHubError, AltSourceError) as err:
+            except (version.InvalidVersion, requests.RequestException, requests.ConnectionError, AltSourceError) as err:
                 logging.error(f"Unable to process {data.get('ids')}.")
                 logging.error(f"{type(err).__name__}: {str(err)}")
                 continue
