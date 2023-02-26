@@ -39,7 +39,7 @@ class BaseParser(ABC):
 class AltSourceParser:
     """A parser that allows the collection the apps and news articles from an AltSource.
     """
-    def __init__(self, filepath: Path | str):
+    def __init__(self, filepath: Path | str, **kwargs):
         """
         Args:
             filepath (Path | str): The location of the source to be parsed, strings can be a url or filepath.
@@ -121,7 +121,7 @@ class AltSourceParser:
         return processed_news
 
 class Unc0verParser:
-    def __init__(self, url: str = "https://unc0ver.dev/releases.json", ver_parse: Callable = lambda x: x.lstrip("v"), prefer_date: bool = False):
+    def __init__(self, url: str = "https://unc0ver.dev/releases.json", ver_parse: Callable = lambda x: x.lstrip("v"), prefer_date: bool = False, **kwargs):
         """Create a new Unc0verParser object that can be used to generate an AltSource.App using the Unc0ver team's personal json release data.
 
         Args:
@@ -162,7 +162,7 @@ class Unc0verParser:
         return metadata
 
 class GithubParser:
-    def __init__(self, url: str | None = None, repo_author: str | None = None, repo_name: str | None = None, ver_parse: Callable = lambda x: x.lstrip("v"), include_pre: bool = False, prefer_date: bool = False, asset_regex: str = r".*\.ipa", extract_twice: bool = False, upload_ipa_repo: Release | None = None):
+    def __init__(self, url: str | None = None, repo_author: str | None = None, repo_name: str | None = None, ver_parse: Callable = lambda x: x.lstrip("v"), include_pre: bool = False, prefer_date: bool = False, asset_regex: str = r".*\.ipa", extract_twice: bool = False, upload_ipa_repo: Release | None = None, **kwargs):
         """Create a new GithubParser object that can be used to generate an AltSource.App.
         
         Supply either the api url explicitly or the repo_author and repo_name to automatically find the api url.
