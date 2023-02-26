@@ -215,7 +215,9 @@ class GithubParser:
         
         #### Parse the correct release ####
         if not include_pre:
-            releases = list(filter(lambda x: x["prerelease"] != True, releases)) # filter out prereleases
+            releases = list(filter(lambda x: x.get("prerelease") != True, releases)) # filter out prereleases
+        if len(releases)==0:
+            raise AltSourceError("No matching releases found.")
         if prefer_date:
             # narrow down assets for all releases to make checking the asset timestamp easier
             for x in releases: match_asset(x)
