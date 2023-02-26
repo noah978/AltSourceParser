@@ -252,6 +252,7 @@ class AltSource:
             self._src["size"] = ver.size
             self._src["downloadURL"] = ver.downloadURL
             self._src["versionDate"] = ver.date
+            self._src["versionDescription"] = ver.localizedDescription
             # Don't need to worry about absoluteVersion here because it was never standard anyways
         
         @property 
