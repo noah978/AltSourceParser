@@ -42,11 +42,11 @@ class AltSourceManager:
         else:
             self.src = src
 
-    def create_app(self, ipa_path: Path | str = None, download_url: str = None) -> AltSource.App:
-        if is_url(download_url):
-            ipa_path = download_tempfile(ipa_path)
-        if ipa_path and not download_url:
-            raise ValueError("Cannot add app via ipa_path without also having a download_url.")
+    def create_app(self, download_url: str = "", ipa_path: Path | str = None) -> AltSource.App:
+        if download_url=="":
+            logging.warning("Users will be unable to download to download the app until a valid download url is set.")
+        if not ipa_path and is_url(download_url):
+            ipa_path = download_tempfile(download_url)
         if ipa_path:
             if isinstance(str, ipa_path):
                 ipa_path = Path(ipa_path)
@@ -74,8 +74,7 @@ class AltSourceManager:
                 logging.error("No bundleIdentifier found in IPA.")
 
             app = AltSource.App(metadata)
-            app.versions.insert(0, new_ver)
-            app._update_old_version_util(new_ver)
+            app.add_version(new_ver)
             return app
         return None
 
@@ -119,13 +118,12 @@ class AltSourceManager:
                         bundleID = app.appID
                         if bundleID in existingAppIDs:
                             # save the old versions property to ensure old versions aren't lost even if the other AltSource isn't tracking them
-                            old_vers = self.src.apps[existingAppIDs.index(bundleID)].versions
+                            old_app = self.src.apps[existingAppIDs.index(bundleID)]
                             # version.parse() will be a lower value if the version is 'older'
-                            if version.parse(app.versions[0].version) > version.parse(self.src.apps[existingAppIDs.index(bundleID)].versions[0].version):
+                            if version.parse(app.latest_version().version) > version.parse(self.src.apps[existingAppIDs.index(bundleID)].latest_version().version):
                                 updatedAppsCount += 1
-                                old_vers.insert(0, app.versions[0])
-                                app._update_old_version_util(old_vers[0])
-                            app._src["versions"] = old_vers # use the _src property to avoid overwrite warnings
+                                old_app.add_version(app.latest_version())
+                            app._src = old_app._src # use the _src property to avoid overwrite warnings
                             self.src.apps[existingAppIDs.index(bundleID)] = app # note that this actually updates the app regardless of whether the version is newer
                         else:
                             addedAppsCount += 1
@@ -187,8 +185,7 @@ class AltSourceManager:
                             if app.appID is None:
                                 app.appID = id
                             
-                            app.versions.insert(0, new_ver)
-                            app._update_old_version_util(new_ver)
+                            app.add_version(new_ver)
                             updatedAppsCount += 1
                 else:
                     raise NotImplementedError("The specified parser class is not supported.")

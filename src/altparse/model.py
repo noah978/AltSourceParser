@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 
 from altparse.errors import *
-from altparse.helpers import fmt_github_datetime, utcnow
+from altparse.helpers import fmt_github_datetime, utcnow, parse_github_datetime
 
 # Create a helper class in the namespace that acts as an intermediary to the logging.info to optionally silence the AltSource creation help text
 # OR remove the info help text from the model entirely and place in the cli instead
@@ -156,6 +156,13 @@ class AltSource:
                 self._src["size"] = value
                 
             @property 
+            def sha256(self) -> str:
+                return self._src.get("sha256")
+            @sha256.setter
+            def sha256(self, value: str):
+                self._src["sha256"] = value
+                
+            @property 
             def localizedDescription(self) -> str:
                 return self._src.get("localizedDescription")
             @localizedDescription.setter
@@ -165,18 +172,18 @@ class AltSource:
             # Start unofficial AltSource properties
             
             @property 
+            def buildVersion(self) -> str:
+                return self._src.get("buildVersion")
+            @buildVersion.setter
+            def buildVersion(self, value: str):
+                self._src["buildVersion"] = value
+            
+            @property 
             def absoluteVersion(self) -> str:
                 return self._src.get("absoluteVersion")
             @absoluteVersion.setter
             def absoluteVersion(self, value: str):
                 self._src["absoluteVersion"] = value
-            
-            @property 
-            def sha256(self) -> str:
-                return self._src.get("sha256")
-            @sha256.setter
-            def sha256(self, value: str):
-                self._src["sha256"] = value
 
         # End class Version
         
@@ -244,6 +251,20 @@ class AltSource:
             """
             return not self.missing_keys()
         
+        def latest_version(self, use_dates: bool = False) -> Version:
+            if use_dates:
+                return sorted(self.versions, key=lambda x: parse_github_datetime(x.date))[-1]
+            return self.versions[0]
+        
+        def add_version(self, ver: Version):
+            versions_list = [ver.version for ver in self.versions]
+            if ver.version in versions_list:
+                logging.warning("Version already exists in AltSource. Automatically replaced with new one.")
+                self.versions[versions_list.index(ver.version)] = ver
+            else:
+                self.versions.insert(0,ver)
+            self._update_old_version_util(ver)
+        
         def _update_old_version_util(self, ver: Version):
             """Takes an `AltSource.App.Version` and uses it to update all the original AltStore API 
                properties for managing updates. Utilize this method to maintain backwards compatibility.
@@ -253,7 +274,6 @@ class AltSource:
             self._src["downloadURL"] = ver.downloadURL
             self._src["versionDate"] = ver.date
             self._src["versionDescription"] = ver.localizedDescription
-            # Don't need to worry about absoluteVersion here because it was never standard anyways
         
         @property 
         def name(self) -> str:
@@ -381,20 +401,6 @@ class AltSource:
             self._src["permissions"] = value
             
         ### Additional properties that are not currently standard in AltSources ###
-        
-        @property 
-        def absoluteVersion(self) -> str:
-            return self._src.get("absoluteVersion")
-        @absoluteVersion.setter
-        def absoluteVersion(self, value: str):
-            self._src["absoluteVersion"] = value
-            
-        @property 
-        def sha256(self) -> str:
-            return self._src.get("sha256")
-        @sha256.setter
-        def sha256(self, value: str):
-            self._src["sha256"] = value
             
         @property 
         def appID(self) -> str:
@@ -612,6 +618,13 @@ class AltSource:
         self._src["news"] = value
         
     # Start unofficial AltSource attributes.
+    
+    @property 
+    def sourceIconURL(self) -> str:
+        return self._src.get("sourceIconURL")
+    @sourceIconURL.setter
+    def sourceIconURL(self, value: str):
+        self._src["sourceIconURL"] = value
     
     @property 
     def version(self) -> str:
