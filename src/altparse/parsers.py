@@ -157,7 +157,8 @@ class Unc0verParser:
         """
         download_url = "https://unc0ver.dev" + self.data["browser_download_url"]
         ipa_path = download_tempfile(download_url)
-        metadata = extract_altstore_metadata(ipa_path)
+        if ipa_path is not None:
+            metadata = extract_altstore_metadata(ipa_path)
         metadata["downloadURL"] = download_url
         return metadata
 
@@ -251,15 +252,16 @@ class GithubParser:
         download_url = self.data["asset"]["browser_download_url"]
 
         ipa_path = download_tempfile(download_url)
-        payload_path = extract_ipa(ipa_path, self.extract_twice)
-        if self.extract_twice:
-            ipa_path = payload_path.parent / "temp2.ipa"
-        plist_path = list(payload_path.rglob("Info.plist"))[0] # locate the Info.plist path within the extracted data
-        metadata = extract_altstore_metadata(ipa_path=ipa_path, plist_path=plist_path)
-        
-        # Uploads the ipa to a separate GitHub repository after its been processed
-        if self.upload_ipa_repo is not None:
-            download_url = upload_ipa_github(ipa_path, self.upload_ipa_repo, name=metadata["bundleIdentifier"], ver=metadata["version"])
+        if ipa_path is not None:
+            payload_path = extract_ipa(ipa_path, self.extract_twice)
+            if self.extract_twice:
+                ipa_path = payload_path.parent / "temp2.ipa"
+            plist_path = list(payload_path.rglob("Info.plist"))[0] # locate the Info.plist path within the extracted data
+            metadata = extract_altstore_metadata(ipa_path=ipa_path, plist_path=plist_path)
+            
+            # Uploads the ipa to a separate GitHub repository after its been processed
+            if self.upload_ipa_repo is not None:
+                download_url = upload_ipa_github(ipa_path, self.upload_ipa_repo, name=metadata["bundleIdentifier"], ver=metadata["version"])
         
         metadata["downloadURL"] = download_url
         return metadata

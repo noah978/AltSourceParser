@@ -133,7 +133,8 @@ class AltSource:
                 """
                 if self.downloadURL is not None:
                     ipa_path = download_tempfile(self.downloadURL)
-                    self.sha256 = extract_sha256(ipa_path)
+                    if ipa_path is not None:
+                        self.sha256 = extract_sha256(ipa_path)
             
             @property 
             def version(self) -> str:
