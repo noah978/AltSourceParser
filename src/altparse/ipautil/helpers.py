@@ -36,8 +36,8 @@ def cleanup_tempdir(fp: Path):
     except Exception as err:
         logging.warning(f"Unable to cleanup files in temporary directory: {str(fp)} due to {err.__class__}")
 
-def download_tempfile(download_url: str) -> Path:
-    """Downloads file to a temporary directory.
+def download_tempfile(download_url: str) -> Path | None:
+    """Downloads file to a temporary directory. If a file cannot be downloaded, it returns None.
 
     Args:
         download_url (str): The url of the file to be downloaded.
@@ -51,6 +51,11 @@ def download_tempfile(download_url: str) -> Path:
     r = requests.get(download_url)
     with open(tempdir / filename, "wb") as file:
         file.write(r.content)
+    try:
+        open(tempdir / filename, "r")
+    except OSError as err:
+        logging.error("Could not find/open downloaded file.")
+        return None
     return tempdir / filename
 
 def extract_sha256(ipa_path: Path) -> str:
