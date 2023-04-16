@@ -10,6 +10,7 @@ Copyright (c) 2022
 """
 
 import atexit
+import hashlib
 import logging
 import os
 import re
@@ -51,6 +52,14 @@ def download_tempfile(download_url: str) -> Path:
     with open(tempdir / filename, "wb") as file:
         file.write(r.content)
     return tempdir / filename
+
+def extract_sha256(ipa_path: Path) -> str:
+    sha256_hash = hashlib.sha256()
+    with open(ipa_path,"rb") as f:
+        # Read and update hash string value in blocks of 4K
+        for byte_block in iter(lambda: f.read(4096),b""):
+            sha256_hash.update(byte_block)
+        return sha256_hash.hexdigest()
 
 def extract_ipa(ipa_path: Path, extract_twice: bool = False, use_temp_dir: bool = False) -> Path | Path:
     """Extracts the ipa data into a directory.

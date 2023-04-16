@@ -17,6 +17,7 @@ from github3.exceptions import GitHubError
 from github3.repos.release import Release
 
 from altparse.ipautil.model import IPA_Info
+from altparse.ipautil.helpers import extract_sha256
 
 
 def get_or_create_github_release(github_token: str, repo_id: int | None = None, repo_name: str | None = None) -> Release:
@@ -71,8 +72,10 @@ def extract_altstore_metadata(ipa_path: Path | None = None, plist_path: Path | N
     
     metadata = {
         "bundleIdentifier": plist.Identifier,
-        "version": plist.ShortVersion
+        "version": plist.ShortVersion,
+        "buildVersion": plist.Version
     }
     if ipa_path is not None:
         metadata["size"] = ipa_path.stat().st_size
+        metadata["sha256"] = extract_sha256(ipa_path)
     return metadata

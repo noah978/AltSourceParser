@@ -56,6 +56,7 @@ class AltSourceManager:
             new_ver = {
                 "date": fmt_github_datetime(datetime.utcnow()),
                 "size": metadata.get("size"),
+                "sha256": metadata.get("sha256"),
                 "version": metadata.get("version"),
                 "downloadURL": download_url
             }
@@ -170,6 +171,7 @@ class AltSourceManager:
                                 "date": parser.versionDate,
                                 "localizedDescription": parser.versionDescription,
                                 "size": metadata.get("size"),
+                                "sha256": metadata.get("sha256"),
                                 "version": metadata.get("version") or parser.version,
                                 "downloadURL": metadata.get("downloadURL")
                             }
@@ -208,6 +210,23 @@ class AltSourceManager:
             
         logging.info(f"{updatedAppsCount} app(s) updated.")
         logging.info(f"{addedAppsCount} app(s) added, {addedNewsCount} news article(s) added.")
+
+    def update_hashes(self, only_latest: bool = True, force_update: bool = False):
+        """Updates the sha256 hashes for 
+
+        Args:
+            only_latest (bool, optional): Only updates missing hashes for the latest version. Defaults to True.
+            force_update (bool, optional): Forces every app, every version to update its hash. Defaults to False.
+        """
+        for app in self.src.apps:
+            if only_latest:
+                latest_ver = app.latest_version()
+                if force_update or latest_ver.sha256 is None:
+                    latest_ver.calculate_sha256()
+            else:
+                for ver in app.versions:
+                    if force_update or ver.sha256 is None:
+                        ver.calculate_sha256()
 
     def alter_app_info(self, alternate_data: dict[str, dict[str, any]]):
         """Uses the provided alternate source info to automatically modify the data in the json.

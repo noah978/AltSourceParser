@@ -15,6 +15,7 @@ from pathlib import Path
 
 from altparse.errors import *
 from altparse.helpers import fmt_github_datetime, utcnow, parse_github_datetime
+from altparse.ipautil.helpers import extract_sha256, download_tempfile
 
 # Create a helper class in the namespace that acts as an intermediary to the logging.info to optionally silence the AltSource creation help text
 # OR remove the info help text from the model entirely and place in the cli instead
@@ -126,6 +127,13 @@ class AltSource:
                     bool: True if the `Permission` is a valid AltSource.App.Permission.
                 """
                 return not self.missing_keys()
+            
+            def calculate_sha256(self):
+                """Calculates the sha256 hash based on the downloadURL object and sets the property.
+                """
+                if self.downloadURL is not None:
+                    ipa_path = download_tempfile(self.downloadURL)
+                    self.sha256 = extract_sha256(ipa_path)
             
             @property 
             def version(self) -> str:
