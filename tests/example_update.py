@@ -145,5 +145,6 @@ src = altsource_from_file("quantumsource.json")
 srcmgr = AltSourceManager(src, sourcesData)
 
 srcmgr.update()
+srcmgr.update_hashes()
 srcmgr.alter_app_info(alternateAppData)
 srcmgr.save(prettify=True) # if prettify is true, output will have indents and newlines

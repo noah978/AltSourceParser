@@ -197,7 +197,7 @@ class AltSource:
                     "bundleIdentifier": "com.example.app", 
                     "developerName": "Example.com", 
                     "versions": [],
-                    "localizedDescription": "An app that is an example.", 
+                    "localizedDescription": "An app that is an example.",
                     "iconURL": "https://example.com/icon.png"
                     }
             else:

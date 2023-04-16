@@ -207,7 +207,7 @@ class GithubParser:
                 alter_tag_name(release)
                 ver = version.parse(release["tag_name"])
                 if isinstance(ver, version.LegacyVersion):
-                    logging.warning(f"Invalid version removed: {ver.base_version}")
+                    logging.warning(f"Invalid GitHub tag version not considered: {ver.base_version}")
                     releases.pop(index)
 
         def alter_tag_name(release: dict):

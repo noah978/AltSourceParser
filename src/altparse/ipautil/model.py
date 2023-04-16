@@ -74,7 +74,7 @@ class IPA_Info:
         
     @property 
     def ShortVersion(self) -> str:
-        """The most commonly used and more accurate version.
+        """The most commonly used and more accurate version designed for display to end users.
         """
         return self._plist.get("CFBundleShortVersionString").lstrip("v")
         
@@ -84,7 +84,7 @@ class IPA_Info:
         
     @property 
     def Version(self) -> str:
-        """Version that sometimes only contains the major version point.
+        """Version that is designed to indicate the internal build version, sometimes only contains one digit or the full version string.
         """
         return self._plist.get("CFBundleVersion")
     
