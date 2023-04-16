@@ -212,7 +212,7 @@ class AltSourceManager:
         logging.info(f"{addedAppsCount} app(s) added, {addedNewsCount} news article(s) added.")
 
     def update_hashes(self, only_latest: bool = True, force_update: bool = False):
-        """Updates the sha256 hashes for 
+        """Updates the sha256 hashes for the apps in the AltSource.
 
         Args:
             only_latest (bool, optional): Only updates missing hashes for the latest version. Defaults to True.
