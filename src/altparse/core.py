@@ -120,9 +120,10 @@ class AltSourceManager:
                             # save the old versions property to ensure old versions aren't lost even if the other AltSource isn't tracking them
                             old_app = self.src.apps[existingAppIDs.index(bundleID)]
                             # version.parse() will be a lower value if the version is 'older'
-                            if version.parse(app.latest_version().version) > version.parse(self.src.apps[existingAppIDs.index(bundleID)].latest_version().version):
+                            new_ver = app.latest_version()
+                            if version.parse(new_ver.version) > version.parse(self.src.apps[existingAppIDs.index(bundleID)].latest_version().version):
                                 updatedAppsCount += 1
-                                old_app.add_version(app.latest_version())
+                                old_app.add_version(new_ver)
                             app._src = old_app._src # use the _src property to avoid overwrite warnings
                             self.src.apps[existingAppIDs.index(bundleID)] = app # note that this actually updates the app regardless of whether the version is newer
                         else:
