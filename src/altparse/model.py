@@ -62,7 +62,7 @@ class AltSource:
                 Returns:
                     bool: True if the `Permission` is a valid AltSource.App.Permission.
                 """
-                return not self.missing_keys() and self.is_valid_type()
+                return not self.missing_keys()
             
             def is_valid_type(self) -> bool:
                 """Checks to see if the Permission type is valid.
@@ -258,7 +258,9 @@ class AltSource:
             Returns:
                 bool: True if the `App` is a valid AltSource.App.
             """
-            return not self.missing_keys()
+            valid_versions = self.versions is not None and len(self.versions) > 1 and all([version.is_valid() for version in self.versions])
+            valid_perms = all([permission.is_valid() for permission in self.permissions])
+            return valid_versions and valid_perms and not self.missing_keys()
         
         def latest_version(self, use_dates: bool = False) -> Version:
             if use_dates:
@@ -585,7 +587,14 @@ class AltSource:
         return missing_keys
     
     def is_valid(self):
-        return not self.missing_keys()
+        """Checks to see if the AltSource is valid and contains all the required information.
+
+            Returns:
+                bool: True if object is a valid AltSource.
+        """
+        valid_apps = all([app.is_valid() for app in self.apps])
+        valid_news = self.news is None or all([article.is_valid() for article in self.news])
+        return valid_apps and valid_news and not self.missing_keys()
     
     @property 
     def name(self) -> str:
