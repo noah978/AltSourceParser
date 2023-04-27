@@ -202,7 +202,8 @@ class AltSource:
             if src is None:
                 logging.info(f"Brand new AltSource.App created. Please remember to set the following properties: {self._requiredKeys}")
                 self._src = {
-                    "name": "Example App", 
+                    "name": "Example App",
+                    "appID": "com.example.app", 
                     "bundleIdentifier": "com.example.app", 
                     "developerName": "Example.com", 
                     "versions": [],
@@ -215,15 +216,13 @@ class AltSource:
                     self._src["permissions"] = [self.Permission(perm) for perm in src["permissions"]]
                 if "versions" in src.keys():
                     self._src["versions"] = [AltSource.App.Version(ver) for ver in src["versions"]]
-                else: # create the first Version 
+                else: # create the first Version by attempting to convert from old AltSource API
                     self._src["versions"] = [AltSource.App.Version({
                         "version": src.get("version"),
                         "date": src.get("versionDate"),
                         "downloadURL": src.get("downloadURL"),
                         "localizedDescription": src.get("versionDescription"),
-                        "size": src.get("size"),
-                        "sha256": src.get("sha256"),
-                        "absoluteVersion": src.get("absoluteVersion")
+                        "size": src.get("size")
                     })]
                 missing_keys = self.missing_keys()
                 if missing_keys:
@@ -325,42 +324,6 @@ class AltSource:
             self._src["versions"] = value
             
         @property 
-        def version(self) -> str:
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            return self._src.get("version")
-        @version.setter
-        def version(self, value: str):
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            self._src["version"] = value
-            
-        @property 
-        def versionDate(self) -> str:
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            return self._src.get("versionDate")
-        @versionDate.setter
-        def versionDate(self, value: str):
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            self._src["versionDate"] = value
-            
-        @property 
-        def versionDescription(self) -> str:
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            return self._src.get("versionDescription")
-        @versionDescription.setter
-        def versionDescription(self, value: str):
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            self._src["versionDescription"] = value
-            
-        @property 
-        def downloadURL(self) -> str:
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            return self._src.get("downloadURL")
-        @downloadURL.setter
-        def downloadURL(self, value: str):
-            logging.warning(f"Using deprecated v1 AltSource API.")
-            self._src["downloadURL"] = value
-            
-        @property 
         def localizedDescription(self) -> str:
             return self._src.get("localizedDescription")
         @localizedDescription.setter
@@ -410,6 +373,44 @@ class AltSource:
             if self.permissions is not None:
                 logging.warning(f"Entire `permissions` section has been replaced for {self.name}.")
             self._src["permissions"] = value
+            
+        ### Deprecated properties ###
+        
+        @property 
+        def version(self) -> str:
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            return self._src.get("version")
+        @version.setter
+        def version(self, value: str):
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            self._src["version"] = value
+            
+        @property 
+        def versionDate(self) -> str:
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            return self._src.get("versionDate")
+        @versionDate.setter
+        def versionDate(self, value: str):
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            self._src["versionDate"] = value
+            
+        @property 
+        def versionDescription(self) -> str:
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            return self._src.get("versionDescription")
+        @versionDescription.setter
+        def versionDescription(self, value: str):
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            self._src["versionDescription"] = value
+            
+        @property 
+        def downloadURL(self) -> str:
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            return self._src.get("downloadURL")
+        @downloadURL.setter
+        def downloadURL(self, value: str):
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            self._src["downloadURL"] = value
             
         ### Additional properties that are not currently standard in AltSources ###
             
