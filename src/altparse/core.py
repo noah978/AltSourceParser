@@ -124,6 +124,9 @@ class AltSourceManager:
                             new_ver = app.latest_version()
                             if version.parse(new_ver.version) > version.parse(self.src.apps[existingAppIDs.index(bundleID)].latest_version().version):
                                 updatedAppsCount += 1
+                                if new_ver.sha256 is None:
+                                    logging.debug(f"Updating {app.name} sha256 checksum.")
+                                    new_ver.calculate_sha256
                                 old_app.add_version(new_ver)
                             app._src = old_app._src # use the _src property to avoid overwrite warnings
                             self.src.apps[existingAppIDs.index(bundleID)] = app # note that this actually updates the app regardless of whether the version is newer
@@ -222,6 +225,7 @@ class AltSourceManager:
             if only_latest:
                 latest_ver = app.latest_version()
                 if force_update or latest_ver.sha256 is None:
+                    logging.debug(f"Updating {app.name} sha256 checksum.")
                     latest_ver.calculate_sha256()
             else:
                 for ver in app.versions:
