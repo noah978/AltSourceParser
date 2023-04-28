@@ -26,7 +26,7 @@ from altparse.parsers import Parser
 
 
 class AltSourceManager:
-    def __init__(self, src: AltSource | None = None, sources_data: list[dict[str]] | None = None):
+    def __init__(self, src: AltSource | None = None, sources_data: list[dict[str]] | None = None, **kwargs):
         """Creates a new AltSourceManager instance to maintain an AltSource.
 
         If no filepath is provided, a brand new blank source is created.
@@ -42,7 +42,7 @@ class AltSourceManager:
         else:
             self.src = src
 
-    def create_app(self, download_url: str = "", ipa_path: Path | str = None) -> AltSource.App:
+    def create_app(self, download_url: str = "", ipa_path: Path | str = None, **kwargs) -> AltSource.App:
         if download_url=="":
             logging.warning("Users will be unable to download to download the app until a valid download url is set.")
         if not ipa_path and is_url(download_url):
@@ -79,7 +79,7 @@ class AltSourceManager:
             return app
         return None
 
-    def add(self, app: AltSource.App):
+    def add(self, app: AltSource.App, **kwargs):
         if not isinstance(app, AltSource.App):
             logging.error("No app added.")
             return
@@ -95,7 +95,7 @@ class AltSourceManager:
             self.src.apps.append(app)
             logging.info(f"Adding {app.name} to {self.src.name}")
 
-    def update(self):
+    def update(self, **kwargs):
         """Updates the primary AltSource using the source data provided to the AltSourceManager.
 
         Raises:
