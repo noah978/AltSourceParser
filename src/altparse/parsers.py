@@ -198,10 +198,19 @@ class GithubParser:
                 raise GitHubError("Github API issue: " + releases.get("message"))
 
         #### Helper methods ####
-        def match_asset(release):
+        def match_asset(release: dict):
             assets = list(filter(lambda x: re.fullmatch(self.asset_regex, x["name"]), release["assets"])) # filters assets to match asset_regex
+            if not assets: # there were no IPAs matching the regex
+                return
             asset = sorted(assets, key=lambda x: parse_github_datetime(x["updated_at"]))[-1] # gets most recently updated ipa
             release["asset"] = asset # set asset in the release to only be most recently IPA found
+            
+        def filter_by_asset(releases: list[dict]) -> list[dict]:
+            for x in releases: match_asset(x)
+            return list(filter(lambda x: x.get("asset") is not None, releases))
+            
+        def alter_tag_name(release: dict):
+            release["tag_name"] = ver_parse(release["tag_name"])
             
         def alter_tag_names(releases: list):
             for index, release in enumerate(releases):
@@ -210,9 +219,6 @@ class GithubParser:
                 if isinstance(ver, version.LegacyVersion):
                     logging.warning(f"Invalid GitHub tag version not considered: {ver.base_version}")
                     releases.pop(index)
-
-        def alter_tag_name(release: dict):
-            release["tag_name"] = ver_parse(release["tag_name"])
         
         #### Parse the correct release ####
         if not include_pre:
@@ -221,15 +227,17 @@ class GithubParser:
             raise AltSourceError("No matching releases found.")
         if prefer_date:
             # narrow down assets for all releases to make checking the asset timestamp easier
-            for x in releases: match_asset(x)
+            # by stripping out releases that don't match the asset_regex
+            releases = filter_by_asset(releases)
             self.data = sorted(releases, key=lambda x: parse_github_datetime(x["asset"]["updated_at"]))[-1] # only grab the most recent release
             alter_tag_name(self.data)
         else:
             # alter the github release tags to match AltStore version tags
             # strip out any invalid versions
+            # strip out releases that don't match the asset_regex
+            releases = filter_by_asset(releases)
             alter_tag_names(releases)
             self.data = sorted(releases, key=lambda x: version.parse(x["tag_name"]))[-1] # only grab the release with the highest version
-            match_asset(self.data)
 
     @property
     def version(self) -> str:
