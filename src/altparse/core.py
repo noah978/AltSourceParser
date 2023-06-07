@@ -21,7 +21,7 @@ from altparse.errors import *
 from altparse.helpers import *
 from altparse.ipautil import extract_altstore_metadata
 from altparse.ipautil.helpers import download_tempfile
-from altparse.model import AltSource
+from altparse.model import AltSource, update_props_from_new_version
 from altparse.parsers import Parser
 
 
@@ -104,7 +104,7 @@ class AltSourceManager:
         """
         logging.info(f"Starting on {self.src.name}")
         existingAppIDs = [app.appID or app.bundleIdentifier for app in self.src.apps]
-        existingNewsIDs = [article.newsID for article in self.src.news]
+        existingNewsIDs = [article.identifier for article in self.src.news]
         updatedAppsCount = addedAppsCount = addedNewsCount = 0
 
         for data in self.src_data:
@@ -120,13 +120,11 @@ class AltSourceManager:
                         if bundleID in existingAppIDs:
                             # save the old versions property to ensure old versions aren't lost even if the other AltSource isn't tracking them
                             old_app = self.src.apps[existingAppIDs.index(bundleID)]
-                            # version.parse() will be a lower value if the version is 'older'
+                            # version will be a lower value if the version is 'older'
                             new_ver = app.latest_version()
-                            if version.parse(new_ver.version) > version.parse(self.src.apps[existingAppIDs.index(bundleID)].latest_version().version):
+                            if new_ver > self.src.apps[existingAppIDs.index(bundleID)].latest_version():
                                 updatedAppsCount += 1
-                                if new_ver.sha256 is None:
-                                    logging.debug(f"Updating {app.name} sha256 checksum.")
-                                    new_ver.calculate_sha256
+                                update_props_from_new_version(old_app, new_ver) # handles incompatibilities with older format AltSources
                                 old_app.add_version(new_ver)
                             app._src = old_app._src # use the _src property to avoid overwrite warnings
                             self.src.apps[existingAppIDs.index(bundleID)] = app # note that this actually updates the app regardless of whether the version is newer
@@ -137,7 +135,7 @@ class AltSourceManager:
                     if not data.get("ignoreNews"):
                         news = parser.parse_news(None if data.get("getAllNews") else data.get("ids"))
                         for article in news:
-                            newsID = article.newsID
+                            newsID = article.identifier
                             if newsID in existingNewsIDs:
                                 self.src.news[existingNewsIDs.index(newsID)] = article # overwrite existing news article
                             else:
@@ -176,6 +174,7 @@ class AltSourceManager:
                                 "size": metadata.get("size"),
                                 "sha256": metadata.get("sha256"),
                                 "version": metadata.get("version") or parser.version,
+                                "buildVersion": metadata.get("buildVersion"),
                                 "downloadURL": metadata.get("downloadURL")
                             }
                             
@@ -192,6 +191,7 @@ class AltSourceManager:
                                 app.appID = id
                             
                             app.add_version(new_ver)
+                            app.appPermissions = AltSource.App.Permissions(metadata.get("appPermissions"))
                             updatedAppsCount += 1
                 else:
                     raise NotImplementedError("The specified parser class is not supported.")
@@ -243,22 +243,22 @@ class AltSourceManager:
             bundleID = self.src.apps[i].appID
             if bundleID in alternate_data.keys():
                 for key in alternate_data[bundleID].keys():
-                    if key == "permissions":
-                        self.src.apps[i]._src[key] = [AltSource.App.Permission(perm) for perm in alternate_data[bundleID][key]]
+                    if key == "appPermissions":
+                        self.src.apps[i]._src[key] = AltSource.App.Permissions(alternate_data[bundleID][key])
                     elif key == "versions":
                         self.src.apps[i]._src[key] = [AltSource.App.Version(ver) for ver in alternate_data[bundleID][key]]
                     else:
                         self.src.apps[i]._src[key] = alternate_data[bundleID][key]
 
-    def save(self, alternate_dir: Path | str | None = None, prettify: bool = True):
+    def save(self, alternate_dir: Path | str | None = None, prettify: bool = True, only_standard_props: bool = True):
         """Saves the AltSource the manager is in charge of to file.
 
         Args:
             prettify (bool, optional): If False, the file will saved as a minified file. Defaults to True.
             alternate_dir (Path | str | None, optional): _description_. Defaults to None.
+            only_standard_props (bool, optional): If False, the entire dict used as the backend storage will be output instead of only "normal" AltSource properties. Defaults to True.
         """
-        full_src = self.src.to_dict()
+        full_src = dict(self.src) if only_standard_props else self.src.to_dict() 
         with open(alternate_dir or self.src.path, "w", encoding="utf-8") as fp:
             json.dump(full_src, fp, indent = 2 if prettify else None)
             fp.write("\n") # add missing newline to EOF
-    

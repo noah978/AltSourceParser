@@ -68,14 +68,37 @@ def extract_altstore_metadata(ipa_path: Path | None = None, plist_path: Path | N
     Returns:
         dict[str, Any]: Returns a dictionary containing the bundleID, version, and more
     """
-    plist = IPA_Info(ipa_path=ipa_path, plist_path=plist_path)
+    ipa_info = IPA_Info(ipa_path=ipa_path, plist_path=plist_path)
     
+    # common metadata
     metadata = {
-        "bundleIdentifier": plist.Identifier,
-        "version": plist.ShortVersion,
-        "buildVersion": plist.Version
+        "bundleIdentifier": ipa_info.Identifier,
+        "version": ipa_info.ShortVersion,
+        "buildVersion": ipa_info.Version,
+        "appPermissions": extract_permissions(ipa_info=ipa_info)
     }
+    
     if ipa_path is not None:
         metadata["size"] = ipa_path.stat().st_size
         metadata["sha256"] = extract_sha256(ipa_path)
     return metadata
+
+def extract_permissions(ipa_info: IPA_Info | None = None, ipa_path: Path | None = None) -> dict[str,list]:
+    if ipa_info is None and ipa_path is not None:
+        ipa_info = IPA_Info(ipa_path)
+    elif ipa_info is None:
+        raise ValueError("Not enough information to extract permissions.")
+    
+    privacy_perms = []
+    for k,desc in ipa_info._plist.items():
+        if isinstance(k, str) and k.endswith("UsageDescription"):
+            privacy_perms.append({
+                "name": k[2:k.find("UsageDescription")],
+                "usageDescription": desc
+            })
+            
+    permissions = {
+        "entitlements": [],
+        "privacy": privacy_perms
+    }
+    return permissions

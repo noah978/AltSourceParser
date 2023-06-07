@@ -61,7 +61,7 @@ class AltSourceParser:
                 raise ArgumentTypeError("Filepath must be a path-like object or a url.")
 
         if not self.src.is_valid():
-            raise AltSourceError("Invalid source formatting.")
+            logging.warning("Invalid source formatting.")
 
     def parse_apps(self, ids: list[str | dict[str, str]] | None = None) -> list[AltSource.App]:
         """Takes a provided list of ids that are `str` provided that `appID` is intended to be equal to `bundleIdentifier` or are type `dict` in the case that they are not the same value. The dict key will be the id being parsed from the other source, assumably the `bundleIdentifier` (but if an `appID` does exist, it will prioritize that) and the predetermined `appID` will be the value. It will then ensure every app has a unique `appID` before returning the list of Apps. This allows the user to change the appID of an app when they parse it.
@@ -100,7 +100,7 @@ class AltSourceParser:
                         
                 processed_keys.append(id)
             else:
-                logging.warning(f"Failed to parse invalid app: {app.name}")
+                logging.error(f"Failed to parse invalid app: {app.name}")
             
         # determine if any listed keys were not found in the source
         if len(processed_keys) < len(fetch_ids):
@@ -116,7 +116,7 @@ class AltSourceParser:
             if article.is_valid():
                 if ids is None:
                     processed_news.append(article)
-                elif article.newsID in ids:
+                elif article.identifier in ids:
                     processed_news.append(article)
         return processed_news
 
@@ -199,6 +199,7 @@ class GithubParser:
 
         #### Helper methods ####
         def match_asset(release: dict):
+            """Uses asset_regex to find matching GitHub assets, then selects the most recent one and saves it to the key `asset`"""
             assets = list(filter(lambda x: re.fullmatch(self.asset_regex, x["name"]), release["assets"])) # filters assets to match asset_regex
             if not assets: # there were no IPAs matching the regex
                 return
@@ -206,13 +207,16 @@ class GithubParser:
             release["asset"] = asset # set asset in the release to only be most recently IPA found
             
         def filter_by_asset(releases: list[dict]) -> list[dict]:
+            """Uses asset_regex to remove any releases that don't contain a matching file"""
             for x in releases: match_asset(x)
             return list(filter(lambda x: x.get("asset") is not None, releases))
             
         def alter_tag_name(release: dict):
+            """Uses lambda function to convert the tag name to the Python packaging.version standard"""
             release["tag_name"] = ver_parse(release["tag_name"])
             
         def alter_tag_names(releases: list):
+            """Changes all release tag names to the Python packaging.version standard (otherwise it's removed)"""
             for index, release in enumerate(releases):
                 alter_tag_name(release)
                 ver = version.parse(release["tag_name"])
@@ -223,19 +227,20 @@ class GithubParser:
         #### Parse the correct release ####
         if not include_pre:
             releases = list(filter(lambda x: x.get("prerelease") != True, releases)) # filter out prereleases
+            
+        # narrow down assets for all releases to make checking the asset timestamp easier
+        # by stripping out releases that don't match the asset_regex
+        releases = filter_by_asset(releases)
         if len(releases)==0:
             raise AltSourceError("No matching releases found.")
         if prefer_date:
             # narrow down assets for all releases to make checking the asset timestamp easier
             # by stripping out releases that don't match the asset_regex
-            releases = filter_by_asset(releases)
             self.data = sorted(releases, key=lambda x: parse_github_datetime(x["asset"]["updated_at"]))[-1] # only grab the most recent release
             alter_tag_name(self.data)
         else:
             # alter the github release tags to match AltStore version tags
             # strip out any invalid versions
-            # strip out releases that don't match the asset_regex
-            releases = filter_by_asset(releases)
             alter_tag_names(releases)
             self.data = sorted(releases, key=lambda x: version.parse(x["tag_name"]))[-1] # only grab the release with the highest version
 

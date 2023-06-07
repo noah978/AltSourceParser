@@ -11,95 +11,288 @@ Copyright (c) 2022
 
 import json
 import logging
+from abc import ABC
+from functools import total_ordering
 from pathlib import Path
 
+from packaging import version
+
 from altparse.errors import *
-from altparse.helpers import fmt_github_datetime, utcnow, parse_github_datetime
-from altparse.ipautil.helpers import extract_sha256, download_tempfile
+from altparse.helpers import (all_class_properties, fmt_github_datetime,
+                              parse_github_datetime, utcnow, equal_ignore_order)
+from altparse.ipautil.helpers import download_tempfile, extract_sha256 
+from altparse.ipautil.core import extract_permissions
 
 # Create a helper class in the namespace that acts as an intermediary to the logging.info to optionally silence the AltSource creation help text
 # OR remove the info help text from the model entirely and place in the cli instead
 
-class AltSource:
-    class App:
-        class Permission:
-            _validTypes = ["photos", "camera", "location", "contacts", "reminders", "music", "microphone", "speech-recognition", "background-audio", "background-fetch", "bluetooth", "network", "calendars", "faceid", "siri", "motion"]
-            _requiredKeys = ["type", "usageDescription"]
+
+class Base(ABC):
+    _src = {}
+    _required_keys = []
+    _deprecated_keys = []
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            for key in all_class_properties(self.__class__):
+                if key in self._deprecated_keys: continue
+                value = getattr(self, key)
+                other_value = getattr(other, key)
+                if isinstance(value, list) and equal_ignore_order(value, other_value): return False
+                elif getattr(self, key) != getattr(other, key): return False
+            return True
+        return NotImplemented
+
+    def __iter__(self):
+        for key in all_class_properties(self.__class__):
+            if key in self._deprecated_keys: continue
+            value = getattr(self, key)
+            if value is None: continue
+            if isinstance(value, list) and len(value)>0 and issubclass(value[0].__class__, Base): 
+                yield (key, [dict(item) for item in value])
+            elif issubclass(value.__class__, Base):  yield (key, dict(value))
+            else: yield (key, value)
             
-            def __init__(self, src: dict[str] | None = None):
+    def __str__(self):
+        return str(dict(self))
+
+class AltSource(Base):
+    class App(Base):
+        
+        class Permissions(Base):
+            class Entitlement(Base):
+                _required_keys = ["name"]
+                
+                def __init__(self, src: dict[str] | None = None):
+                    if src is not None:
+                        self._src = src
+                        
+                        missing_keys = self.missing_keys()
+                        if missing_keys:
+                            logging.warning(f"Missing required AltSource.App.Entitlement keys: {missing_keys}")
+                    else:
+                        logging.info(f"Brand new AltSource.App.Entitlement created. Please remember to set the following properties: {self._required_keys}")
+                        self._src = {}
+                
+                def to_dict(self) -> dict[str]:
+                    ret = self._src.copy()
+                    ret = {k:v for (k,v) in ret.items() if ret.get(k) is not None}
+                    return ret
+                
+                def missing_keys(self) -> list[str]:
+                    """Checks to see if the Entitlement has all the required values and returns the missing keys.
+                    
+                    Note that if the list is empty, it will evaluate as False.
+
+                    Returns:
+                        list[str]: The list of required keys that are missing. If the Entitlement is valid, the list will be empty.
+                    """
+                    missing_keys = list()
+                    for key in self._required_keys:
+                        if key not in self._src.keys():
+                            missing_keys.append(key)
+                    return missing_keys
+                
+                def is_valid(self) -> bool:
+                    """Checks to see if the AltSource.App.Entitlement is valid and contains all the required information.
+
+                    Returns:
+                        bool: True if the `Entitlement` is a valid AltSource.App.Entitlement.
+                    """
+                    return not self.missing_keys()
+                
+                @property 
+                def name(self) -> str:
+                    return self._src.get("name")
+                @name.setter
+                def name(self, value: str):
+                    self._src["name"] = value
+            # End class Entitlement
+            class Privacy(Base):
+                # this is not an all-inclusive list, but is the most common privacy permissions that an app can request / utilize
+                _valid_types = ["BluetoothAlways", "BluetoothPeripheral", "Calendars", "Reminders", "Camera", "Microphone", "Contacts", "FaceID", "DesktopFolder", "DocumentsFolder", "DownloadsFolder", "NetworkVolumes", "RemovableVolumes", "FileProviderDomain", "GKFriendList", "HealthClinicalHealthRecordsShare", "HealthShare", "HealthUpdate", "HomeKit", "LocationAlwaysAndWhenInUse", "Location", "LocationWhenInUse", "LocationAlways", "AppleMusic", "Motion", "FallDetection", "LocalNetwork", "NearbyInteraction", "NearbyInteractionAllowOnce", "NFCReader", "PhotoLibraryAdd", "PhotoLibrary", "UserTracking", "AppleEvents", "SystemAdministration", "SensorKit", "Siri", "SpeechRecognition", "VideoSubscriberAccount", "Identity"]
+                _required_keys = ["name", "usageDescription"]
+                
+                def __init__(self, src: dict[str] | None = None):
+                    if src is not None:
+                        self._src = src
+                        missing_keys = self.missing_keys()
+                        if missing_keys:
+                            logging.warning(f"Missing required AltSource.App.Permissions.Privacy keys: {missing_keys}")
+                        if not self.is_valid_type():
+                            logging.warning(f"Privacy name not found in valid types.")
+                    else:
+                        logging.info(f"Brand new AltSource.App.Permissions.Privacy created. Please remember to set the following properties: {self._required_keys}")
+                        self._src = {}
+                
+                def to_dict(self) -> dict[str]:
+                    ret = self._src.copy()
+                    ret = {k:v for (k,v) in ret.items() if ret.get(k) is not None}
+                    return ret
+                
+                def missing_keys(self) -> list[str]:
+                    """Checks to see if the PrivacyPermission has all the required values and returns the missing keys.
+                    
+                    Note that if the list is empty, it will evaluate as False.
+
+                    Returns:
+                        list[str]: The list of required keys that are missing. If the PrivacyPermission is valid, the list will be empty.
+                    """
+                    missing_keys = list()
+                    for key in self._required_keys:
+                        if key not in self._src.keys():
+                            missing_keys.append(key)
+                    return missing_keys
+                
+                def is_valid(self) -> bool:
+                    """Checks to see if the AltSource.App.PrivacyPermission is valid and contains all the required information.
+
+                    Returns:
+                        bool: True if the `PrivacyPermission` is a valid AltSource.App.PrivacyPermission.
+                    """
+                    return not self.missing_keys()
+                
+                def is_valid_type(self) -> bool:
+                    """Checks to see if the PrivacyPermission name is a valid type.
+
+                    Returns:
+                        bool: True if the listed name is valid
+                    """
+                    return self.name in self._valid_types
+                
+                @property 
+                def name(self) -> str:
+                    return self._src.get("name")
+                @name.setter
+                def name(self, value: str):
+                    if value not in self._valid_types:
+                        logging.warning("PrivacyPermission name is not found in the list of valid types.")
+                    self._src["name"] = value
+                    
+                @property 
+                def usageDescription(self) -> str:
+                    return self._src.get("usageDescription")
+                @usageDescription.setter
+                def usageDescription(self, value: str):
+                    self._src["usageDescription"] = value
+            # End class Privacy
+            
+            _required_keys = []
+            
+            def __init__(self, src: dict[str,list] | None = None):
                 if src is not None:
                     self._src = src
-                    if not all(x in src.keys() for x in self._requiredKeys):
-                        logging.warning(f"Missing required AltSource.App.Permission keys. Must have both `type` and `usageDescription`.")
-                    if "type" in src.keys() and not self.is_valid_type():
-                        logging.warning(f"Permission type not found in valid permission types.")
+                    if "entitlements" in src.keys():
+                        self._src["entitlements"] = [AltSource.App.Permissions.Entitlement(title) for title in src["entitlements"]]
+                    if "privacy" in src.keys():
+                        self._src["privacy"] = [AltSource.App.Permissions.Privacy(perm) for perm in src["privacy"]]
+                        
+                    missing_keys = self.missing_keys()
+                    if missing_keys:
+                        logging.warning(f"Missing required AltSource.App.Permissions keys: {missing_keys}")
                 else:
-                    logging.info(f"Brand new AltSource.App.Permission created. Please remember to set the following properties: {self._requiredKeys}")
-                    src = {}
+                    logging.info(f"Brand new AltSource.App.Permissions created. Please remember to add all the entitlements and privacy permissions that your app uses.")
+                    self._src = {
+                        "entitlements": [],
+                        "privacy": []
+                    }
             
             def to_dict(self) -> dict[str]:
                 ret = self._src.copy()
+                if "entitlements" in self._src.keys():
+                    ret["entitlements"] = [title.to_dict() for title in self.entitlements]
+                if "privacy" in self._src.keys():
+                    ret["privacy"] = [perm.to_dict() for perm in self.privacy]
                 ret = {k:v for (k,v) in ret.items() if ret.get(k) is not None}
                 return ret
             
             def missing_keys(self) -> list[str]:
-                """Checks to see if the Permission has all the required values and returns the missing keys.
+                """Checks to see if the Permissions has all the required values and returns the missing keys.
                 
                 Note that if the list is empty, it will evaluate as False.
 
                 Returns:
-                    list[str]: The list of required keys that are missing. If the Permission is valid, the list will be empty.
+                    list[str]: The list of required keys that are missing. If the Permissions is valid, the list will be empty.
                 """
                 missing_keys = list()
-                for key in self._requiredKeys:
+                for key in self._required_keys:
                     if key not in self._src.keys():
                         missing_keys.append(key)
                 return missing_keys
             
             def is_valid(self) -> bool:
-                """Checks to see if the AltSource.App.Permission is valid and contains all the required information.
+                """Checks to see if the AltSource.App.Permissions is valid and contains all the required information.
 
                 Returns:
-                    bool: True if the `Permission` is a valid AltSource.App.Permission.
+                    bool: True if the `Permissions` is a valid AltSource.App.Permissions.
                 """
                 return not self.missing_keys()
             
-            def is_valid_type(self) -> bool:
-                """Checks to see if the Permission type is valid.
-
-                Returns:
-                    bool: True if the listed type is valid
-                """
-                return self._src.get("type") in self._validTypes
-            
             @property 
-            def type(self) -> str:
-                return self._src.get("type")
-            @type.setter
-            def type(self, value: str):
-                if value in self._validTypes:
-                    self._src["type"] = value
-                else:
-                    raise ValueError("Invalid permission type.")
+            def entitlements(self) -> list[Entitlement]:
+                return self._src.get("entitlements",[])
+            @entitlements.setter
+            def entitlements(self, value: list[Entitlement]):
+                if self.entitlements is not None:
+                    logging.warning(f"Entire `entitlements` section has been replaced.")
+                self._src["entitlements"] = value
                 
             @property 
-            def usageDescription(self) -> str:
-                return self._src.get("usageDescription")
-            @usageDescription.setter
-            def usageDescription(self, value: str):
-                self._src["usageDescription"] = value
-        # End class Permission
-        class Version:
-            _requiredKeys = ['version', 'date', 'downloadURL', 'size']
+            def privacy(self) -> list[Privacy]:
+                return self._src.get("privacy",[])
+            @privacy.setter
+            def privacy(self, value: list[Privacy]):
+                if self.privacy is not None:
+                    logging.warning(f"Entire `privacy` section has been replaced.")
+                self._src["privacy"] = value
+        # End class Permissions
+        
+        @total_ordering
+        class Version(Base):
+            _required_keys = ['version', 'date', 'downloadURL', 'size']
             
             def __init__(self, src: dict[str] | None = None):
                 if src is not None:
                     self._src = src
-                    if not all(x in src.keys() for x in self._requiredKeys):
-                        logging.warning(f"Missing required AltSource.App.Permission keys.")
+                    missing_keys = self.missing_keys()
+                    if missing_keys:
+                        logging.warning(f"Missing required AltSource.App.Version keys: {missing_keys}")
                 else:
-                    logging.info(f"Brand new AltSource.App.Version created. Please remember to set the following properties: {self._requiredKeys}")
-                    src = {}
+                    logging.info(f"Brand new AltSource.App.Version created. Please remember to set the following properties: {self._required_keys}")
+                    src = {
+                        "version": "",
+                        "date": "",
+                        "downloadURL": "",
+                        "size": 0
+                    }
+            
+            def __lt__(self, other):
+                if isinstance(other, self.__class__):
+                    if (self.absoluteVersion is not None and other.absoluteVersion is not None and 
+                        version.parse(self.absoluteVersion) < version.parse(other.absoluteVersion)): return True
+                    
+                    if (version.parse(self.version) < version.parse(other.version)): return True
+                    
+                    if (version.parse(self.version) == version.parse(other.version) and 
+                        self.buildVersion is not None and other.buildVersion is not None and 
+                        version.parse(self.buildVersion) < version.parse(other.buildVersion)): return True
+                    
+                    return False
+                return NotImplemented
+            
+            def __gt__(self, other):
+                if isinstance(other, self.__class__):
+                    if (self.absoluteVersion is not None and other.absoluteVersion is not None and 
+                        version.parse(self.absoluteVersion) > version.parse(other.absoluteVersion)): return True
+                    
+                    if (version.parse(self.version) > version.parse(other.version)): return True
+                    
+                    if (version.parse(self.version) == version.parse(other.version) and 
+                        self.buildVersion is not None and other.buildVersion is not None and 
+                        version.parse(self.buildVersion) > version.parse(other.buildVersion)): return True
+                    
+                    return False
+                return NotImplemented
             
             def to_dict(self) -> dict[str]:
                 ret = self._src.copy()
@@ -115,7 +308,7 @@ class AltSource:
                     list[str]: The list of required keys that are missing. If the Version is valid, the list will be empty.
                 """
                 missing_keys = list()
-                for key in self._requiredKeys:
+                for key in self._required_keys:
                     if key not in self._src.keys():
                         missing_keys.append(key)
                 return missing_keys
@@ -128,11 +321,12 @@ class AltSource:
                 """
                 return not self.missing_keys()
             
-            def calculate_sha256(self):
-                """Calculates the sha256 hash based on the downloadURL object and sets the property.
+            def calculate_sha256(self, ipa_path: Path | None):
+                """Calculates the sha256 hash based on the downloadURL or passed `ipa_path` argument and sets the property.
                 """
                 if self.downloadURL is not None:
-                    ipa_path = download_tempfile(self.downloadURL)
+                    if ipa_path is None: 
+                        ipa_path = download_tempfile(self.downloadURL)
                     if ipa_path is not None:
                         self.sha256 = extract_sha256(ipa_path)
             
@@ -193,27 +387,16 @@ class AltSource:
             @absoluteVersion.setter
             def absoluteVersion(self, value: str):
                 self._src["absoluteVersion"] = value
-
         # End class Version
         
-        _requiredKeys = ["name", "bundleIdentifier", "developerName", "versions", "localizedDescription", "iconURL"]
+        _required_keys = ["name", "bundleIdentifier", "developerName", "versions", "localizedDescription", "iconURL"]
+        _deprecated_keys = ["version", "versionDate", "versionDescription", "downloadURL", "size", "permissions"]
         
         def __init__(self, src: dict[str] | None = None):
-            if src is None:
-                logging.info(f"Brand new AltSource.App created. Please remember to set the following properties: {self._requiredKeys}")
-                self._src = {
-                    "name": "Example App",
-                    "appID": "com.example.app", 
-                    "bundleIdentifier": "com.example.app", 
-                    "developerName": "Example.com", 
-                    "versions": [],
-                    "localizedDescription": "An app that is an example.",
-                    "iconURL": "https://example.com/icon.png"
-                    }
-            else:
+            if src is not None:
                 self._src = src
-                if "permissions" in src.keys():
-                    self._src["permissions"] = [self.Permission(perm) for perm in src["permissions"]]
+                if "appPermissions" in src.keys():
+                    self._src["appPermissions"] = AltSource.App.Permissions(src["appPermissions"])
                 if "versions" in src.keys():
                     self._src["versions"] = [AltSource.App.Version(ver) for ver in src["versions"]]
                 else: # create the first Version by attempting to convert from old AltSource API
@@ -224,16 +407,33 @@ class AltSource:
                         "localizedDescription": src.get("versionDescription"),
                         "size": src.get("size")
                     })]
+                    
                 missing_keys = self.missing_keys()
                 if missing_keys:
                     logging.warning(f"Missing required AltSource.App keys: {missing_keys}")
+            else:
+                logging.info(f"Brand new AltSource.App created. Please remember to update the following properties: {self._required_keys}")
+                self._src = {
+                    "name": "Example App",
+                    "appID": "com.example.app", 
+                    "bundleIdentifier": "com.example.app", 
+                    "developerName": "Example.com", 
+                    "versions": [],
+                    "localizedDescription": "An app that is an example.",
+                    "iconURL": "https://example.com/icon.png",
+                    "appPermissions": AltSource.App.Permissions({
+                        "entitlements": [],
+                        "privacy": []
+                    })
+                }
         
         def to_dict(self) -> dict[str]:
             ret = self._src.copy()
-            if "permissions" in self._src.keys():
-                ret["permissions"] = [perm.to_dict() for perm in self.permissions]
+            if "appPermissions" in self._src.keys():
+                ret["appPermissions"] = self.appPermissions.to_dict()
             if "versions" in self._src.keys():
                 ret["versions"] = [ver.to_dict() for ver in self.versions]
+            
             ret = {k:v for (k,v) in ret.items() if ret.get(k) is not None}
             return ret
         
@@ -246,7 +446,7 @@ class AltSource:
                 list[str]: The list of required keys that are missing. If the App is valid, the list will be empty.
             """
             missing_keys = list()
-            for key in self._requiredKeys:
+            for key in self._required_keys:
                 if key not in self._src.keys():
                     missing_keys.append(key)
             return missing_keys
@@ -258,7 +458,12 @@ class AltSource:
                 bool: True if the `App` is a valid AltSource.App.
             """
             valid_versions = self.versions is not None and len(self.versions) > 1 and all([version.is_valid() for version in self.versions])
-            valid_perms = all([permission.is_valid() for permission in self.permissions])
+            
+            # Allow for old AltSource v1 API to be used
+            if not valid_versions:
+                valid_versions = self._src.get("version") is not None and self._src.get("downloadURL") is not None and self._src.get("versionDate") is not None
+            
+            valid_perms = self.appPermissions is None or self.appPermissions.is_valid()
             return valid_versions and valid_perms and not self.missing_keys()
         
         def latest_version(self, use_dates: bool = False) -> Version:
@@ -267,10 +472,10 @@ class AltSource:
             return self.versions[0]
         
         def add_version(self, ver: Version):
-            versions_list = [ver.version for ver in self.versions]
-            if ver.version in versions_list:
+            versions_list = [(ver.version,ver.buildVersion) for ver in self.versions]
+            if (ver.version,ver.buildVersion) in versions_list:
                 logging.warning("Version already exists in AltSource. Automatically replaced with new one.")
-                self.versions[versions_list.index(ver.version)] = ver
+                self.versions[versions_list.index((ver.version,ver.buildVersion))] = ver
             else:
                 self.versions.insert(0,ver)
             self._update_old_version_util(ver)
@@ -316,7 +521,7 @@ class AltSource:
             
         @property 
         def versions(self) -> list[Version]:
-            return self._src.get("versions")
+            return self._src.get("versions",[])
         @versions.setter
         def versions(self, value: list[Version]):
             if self.versions is not None:
@@ -345,13 +550,6 @@ class AltSource:
             self._src["tintColor"] = value
             
         @property 
-        def size(self) -> int:
-            return self._src.get("size")
-        @size.setter
-        def size(self, value: int):
-            self._src["size"] = value
-            
-        @property 
         def beta(self) -> bool:
             return self._src.get("beta")
         @beta.setter
@@ -366,15 +564,22 @@ class AltSource:
             self._src["screenshotURLs"] = value
             
         @property 
-        def permissions(self) -> list[Permission]:
-            return self._src.get("permissions")
-        @permissions.setter
-        def permissions(self, value: list[Permission]):
-            if self.permissions is not None:
-                logging.warning(f"Entire `permissions` section has been replaced for {self.name}.")
-            self._src["permissions"] = value
+        def appPermissions(self) -> Permissions:
+            return self._src.get("appPermissions")
+        @appPermissions.setter
+        def appPermissions(self, value: Permissions):
+            self._src["appPermissions"] = value
             
         ### Deprecated properties ###
+        
+        @property 
+        def permissions(self) -> list[dict]:
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            return self._src.get("permissions")
+        @permissions.setter
+        def permissions(self, value: list[dict]):
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            self._src["permissions"] = value
         
         @property 
         def version(self) -> str:
@@ -412,6 +617,15 @@ class AltSource:
             logging.warning(f"Using deprecated v1 AltSource API.")
             self._src["downloadURL"] = value
             
+        @property 
+        def size(self) -> int:
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            return self._src.get("size")
+        @size.setter
+        def size(self, value: int):
+            logging.warning(f"Using deprecated v1 AltSource API.")
+            self._src["size"] = value
+            
         ### Additional properties that are not currently standard in AltSources ###
             
         @property 
@@ -427,12 +641,12 @@ class AltSource:
             
     # End class App
     
-    class Article:
-        _requiredKeys = ["title", "identifier", "caption", "date"]
+    class Article(Base):
+        _required_keys = ["title", "identifier", "caption", "date"]
         
         def __init__(self, src: dict | None = None):
             if src is None:
-                logging.info(f"Brand new AltSource.Article created. Please remember to set the following properties: {self._requiredKeys}")
+                logging.info(f"Brand new AltSource.Article created. Please remember to set the following properties: {self._required_keys}")
                 self._src = {"title": "Example Article Title", "identifier": "com.example.article", "caption": "Provoking example caption.", "date": fmt_github_datetime(utcnow())}
             else:
                 self._src = src
@@ -454,7 +668,7 @@ class AltSource:
                 list[str]: The list of required keys that are missing. If the `Article` is valid, the list will be empty.
             """
             missing_keys = list()
-            for key in self._requiredKeys:
+            for key in self._required_keys:
                 if key not in self._src.keys():
                     missing_keys.append(key)
             return missing_keys
@@ -482,10 +696,10 @@ class AltSource:
             self._src["name"] = value
             
         @property 
-        def newsID(self) -> str:
+        def identifier(self) -> str:
             return self._src.get("identifier")
-        @newsID.setter
-        def newsID(self, value: str):
+        @identifier.setter
+        def identifier(self, value: str):
             logging.warning(f"Article `identifier` changed from {self._src['identifier']} to {value}.")
             self._src["identifier"] = value
             
@@ -539,7 +753,7 @@ class AltSource:
             self._src["url"] = value
     # End class Article
     
-    _requiredKeys = ["name", "identifier", "apps"]
+    _required_keys = ["name", "identifier", "apps"]
     
     def __init__(self, src: dict | None = None, path: str | Path | None = None):
         """Create new AltSource object. If a src is included, all properties will be retained regardless of use in a 
@@ -549,15 +763,20 @@ class AltSource:
             src (dict, optional): the direct serialization of an AltSource json file. Defaults to None.
             path (str | Path, optional): the filepath to which a physical version of the AltSource should be stored. Defaults to None.
         """
-        if src is None:
-            self._src = {"name": "ExampleSourceName", "identifier": "com.example.identifier", "apps": [], "version": 2}
-            logging.info(f"Brand new AltSource created. Please remember to set the following properties: {self._requiredKeys}")
-        else:
+        if src is not None:
             self._src = src
-            self._src["apps"] = [self.App(app) for app in src["apps"]]
+            self._src["apps"] = [self.App(app) for app in src.get("apps", [])]
             if "news" in self._src.keys():
                 self._src["news"] = [self.Article(art) for art in src["news"]]
             self.version = 2 # set current API version
+            
+            missing_keys = self.missing_keys()
+            if missing_keys:
+                logging.warning(f"Missing required AltSource keys: {missing_keys}")
+        else:
+            self._src = {"name": "ExampleSourceName", "identifier": "com.example.identifier", "apps": [], "version": 2}
+            logging.info(f"Brand new AltSource created. Please remember to set the following properties: {self._required_keys}")
+            
         if path:
             if isinstance(path, str):
                 self.path = Path(path)
@@ -582,7 +801,7 @@ class AltSource:
             list[str]: The list of required keys that are missing. If the `AltSource` is valid, the list will be empty.
         """
         missing_keys = list()
-        for key in self._requiredKeys:
+        for key in self._required_keys:
             if key not in self._src.keys():
                 missing_keys.append(key)
         return missing_keys
@@ -611,13 +830,55 @@ class AltSource:
     def identifier(self, value: str):
         logging.warning(f"Source `identifier` changed from {self._src['identifier']} to {value}.")
         self._src["identifier"] = value
+    
+    @property 
+    def subtitle(self) -> str:
+        return self._src.get("subtitle")
+    @subtitle.setter
+    def subtitle(self, value: str):
+        self._src["subtitle"] = value
         
     @property 
-    def sourceURL(self) -> str:
-        return self._src.get("sourceURL")
-    @sourceURL.setter
-    def sourceURL(self, value: str):
-        self._src["sourceURL"] = value
+    def description(self) -> str:
+        return self._src.get("description")
+    @description.setter
+    def description(self, value: str):
+        self._src["description"] = value
+    
+    @property 
+    def headerURL(self) -> str:
+        return self._src.get("headerURL")
+    @headerURL.setter
+    def headerURL(self, value: str):
+        self._src["headerURL"] = value
+        
+    @property 
+    def iconURL(self) -> str:
+        return self._src.get("iconURL")
+    @iconURL.setter
+    def iconURL(self, value: str):
+        self._src["iconURL"] = value
+        
+    @property 
+    def website(self) -> str:
+        return self._src.get("website")
+    @website.setter
+    def website(self, value: str):
+        self._src["website"] = value
+        
+    @property 
+    def tintColor(self) -> str:
+        return self._src.get("tintColor")
+    @tintColor.setter
+    def tintColor(self, value: str):
+        self._src["tintColor"] = value
+        
+    @property 
+    def featuredApps(self) -> list[str]:
+        return self._src.get("featuredApps")
+    @featuredApps.setter
+    def featuredApps(self, value: list[str]):
+        self._src["featuredApps"] = value
     
     @property 
     def apps(self) -> list[App]:
@@ -636,14 +897,21 @@ class AltSource:
             logging.warning("Entire `news` section has been replaced.")
         self._src["news"] = value
         
+    @property 
+    def userinfo(self) -> dict:
+        return self._src.get("userinfo")
+    @userinfo.setter
+    def userinfo(self, value: dict):
+        self._src["userinfo"] = value
+        
     # Start unofficial AltSource attributes.
     
     @property 
-    def sourceIconURL(self) -> str:
-        return self._src.get("sourceIconURL")
-    @sourceIconURL.setter
-    def sourceIconURL(self, value: str):
-        self._src["sourceIconURL"] = value
+    def sourceURL(self) -> str:
+        return self._src.get("sourceURL")
+    @sourceURL.setter
+    def sourceURL(self, value: str):
+        self._src["sourceURL"] = value
     
     @property 
     def version(self) -> str:
@@ -668,3 +936,11 @@ def altsource_from_file(filepath: Path | str) -> AltSource:
             raise FileNotFoundError(f"{filepath} not found in current working directory.")
     with open(filepath, "r", encoding="utf-8") as fp:
         return AltSource(json.load(fp), filepath)
+    
+def update_props_from_new_version(app: AltSource.App, new_ver: AltSource.App.Version):
+    if new_ver.sha256 is None or app.appPermissions is None:
+        ipa_path = download_tempfile(new_ver.downloadURL)
+        logging.debug(f"Updating {app.name} sha256 checksum.")
+        new_ver.calculate_sha256(ipa_path)
+        logging.debug(f"Collecting {app.name} entitlements and privacy permissions.")
+        app.appPermissions = AltSource.App.Permissions(extract_permissions(ipa_path=ipa_path))

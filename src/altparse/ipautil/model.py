@@ -54,7 +54,7 @@ class IPA_Info:
     def DevelopmentRegion(self) -> str:
         """The development region as determined by the written language used. 
         
-        Example: "en"444
+        Example: "en"
         """
         return self._plist.get("CFBundleDevelopmentRegion")
         
@@ -92,13 +92,128 @@ class IPA_Info:
     def MinimumOSVersion(self) -> str:
         return self._plist.get("MinimumOSVersion")
     
+    # Usage Descriptions
     @property 
-    def NetworkUsageDescription(self) -> str:
-        return self._plist.get("NSLocalNetworkUsageDescription")
-    
+    def BluetoothAlwaysUsageDescription(self) -> str:
+        return self._plist.get("NSBluetoothAlwaysUsageDescription")
     @property 
-    def MicUsageDescription(self) -> str:
+    def BluetoothPeripheralUsageDescription(self) -> str:
+        return self._plist.get("NSBluetoothPeripheralUsageDescription")
+    @property 
+    def CalendarsUsageDescription(self) -> str:
+        return self._plist.get("NSCalendarsUsageDescription")
+    @property 
+    def RemindersUsageDescription(self) -> str:
+        return self._plist.get("NSRemindersUsageDescription")
+    @property 
+    def CameraUsageDescription(self) -> str:
+        return self._plist.get("NSCameraUsageDescription")
+    @property 
+    def MicrophoneUsageDescription(self) -> str:
         return self._plist.get("NSMicrophoneUsageDescription")
+    @property 
+    def ContactsUsageDescription(self) -> str:
+        return self._plist.get("NSContactsUsageDescription")
+    @property 
+    def FaceIDUsageDescription(self) -> str:
+        return self._plist.get("NSFaceIDUsageDescription")
+    @property 
+    def DesktopFolderUsageDescription(self) -> str:
+        return self._plist.get("NSDesktopFolderUsageDescription")
+    @property 
+    def DocumentsFolderUsageDescription(self) -> str:
+        return self._plist.get("NSDocumentsFolderUsageDescription")
+    @property 
+    def DownloadsFolderUsageDescription(self) -> str:
+        return self._plist.get("NSDownloadsFolderUsageDescription")
+    @property 
+    def NetworkVolumesUsageDescription(self) -> str:
+        return self._plist.get("NSNetworkVolumesUsageDescription")
+    @property 
+    def RemovableVolumesUsageDescription(self) -> str:
+        return self._plist.get("NSRemovableVolumesUsageDescription")
+    @property 
+    def FileProviderDomainUsageDescription(self) -> str:
+        return self._plist.get("NSFileProviderDomainUsageDescription")
+    @property 
+    def GKFriendListUsageDescription(self) -> str:
+        return self._plist.get("NSGKFriendListUsageDescription")
+    @property 
+    def HealthClinicalHealthRecordsShareUsageDescription(self) -> str:
+        return self._plist.get("NSHealthClinicalHealthRecordsShareUsageDescription")
+    @property 
+    def HealthShareUsageDescription(self) -> str:
+        return self._plist.get("NSHealthShareUsageDescription")
+    @property 
+    def HealthUpdateUsageDescription(self) -> str:
+        return self._plist.get("NSHealthUpdateUsageDescription")
+    @property 
+    def HomeKitUsageDescription(self) -> str:
+        return self._plist.get("NSHomeKitUsageDescription")
+    @property 
+    def LocationAlwaysAndWhenInUseUsageDescription(self) -> str:
+        return self._plist.get("NSLocationAlwaysAndWhenInUseUsageDescription")
+    @property 
+    def LocationUsageDescription(self) -> str:
+        return self._plist.get("NSLocationUsageDescription")
+    @property 
+    def LocationWhenInUseUsageDescription(self) -> str:
+        return self._plist.get("NSLocationWhenInUseUsageDescription")
+    @property 
+    def LocationAlwaysUsageDescription(self) -> str:
+        return self._plist.get("NSLocationAlwaysUsageDescription")
+    @property 
+    def AppleMusicUsageDescription(self) -> str:
+        return self._plist.get("NSAppleMusicUsageDescription")
+    @property 
+    def MotionUsageDescription(self) -> str:
+        return self._plist.get("NSMotionUsageDescription")
+    @property 
+    def FallDetectionUsageDescription(self) -> str:
+        return self._plist.get("NSFallDetectionUsageDescription")
+    @property 
+    def LocalNetworkUsageDescription(self) -> str:
+        return self._plist.get("NSLocalNetworkUsageDescription")
+    @property 
+    def NearbyInteractionUsageDescription(self) -> str:
+        return self._plist.get("NSNearbyInteractionUsageDescription")
+    @property 
+    def NearbyInteractionAllowOnceUsageDescription(self) -> str:
+        return self._plist.get("NSNearbyInteractionAllowOnceUsageDescription")
+    @property 
+    def NFCReaderUsageDescription(self) -> str:
+        return self._plist.get("NFCReaderUsageDescription")
+    @property 
+    def PhotoLibraryAddUsageDescription(self) -> str:
+        return self._plist.get("NSPhotoLibraryAddUsageDescription")
+    @property 
+    def PhotoLibraryUsageDescription(self) -> str:
+        return self._plist.get("NSPhotoLibraryUsageDescription")
+    @property 
+    def UserTrackingUsageDescription(self) -> str:
+        return self._plist.get("NSUserTrackingUsageDescription")
+    @property 
+    def AppleEventsUsageDescription(self) -> str:
+        return self._plist.get("NSAppleEventsUsageDescription")
+    @property 
+    def SystemAdministrationUsageDescription(self) -> str:
+        return self._plist.get("NSSystemAdministrationUsageDescription")
+    @property 
+    def SensorKitUsageDescription(self) -> str:
+        return self._plist.get("NSSensorKitUsageDescription")
+    @property 
+    def SiriUsageDescription(self) -> str:
+        return self._plist.get("NSSiriUsageDescription")
+    @property 
+    def SpeechRecognitionUsageDescription(self) -> str:
+        return self._plist.get("NSSpeechRecognitionUsageDescription")
+    @property 
+    def VideoSubscriberAccountUsageDescription(self) -> str:
+        return self._plist.get("NSVideoSubscriberAccountUsageDescription")
+    @property 
+    def IdentityUsageDescription(self) -> str:
+        return self._plist.get("NSIdentityUsageDescription")
+    
     
     @property 
     def FileSharingEnabled(self) -> bool:

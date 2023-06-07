@@ -76,3 +76,43 @@ def gen_id_parse_table(ids: list[str | dict[str, str]]) -> dict[str, str] | None
     if convert_ids is not None:
         return {k: v for d in convert_ids for k, v in d.items()} # combine into one dict
     return None
+
+def equal_ignore_order(a, b):
+    """ Use only when elements are neither hashable nor sortable! """
+    unmatched = list(b)
+    for element in a:
+        try:
+            unmatched.remove(element)
+        except ValueError:
+            return False
+    return not unmatched
+
+def class_properties(cls: type) -> list[str]:
+    """Collects only the @property methods on the passed class.
+
+    Args:
+        cls (type): The object class type
+
+    Returns:
+        list[str]: A list of string keys for the classes properties
+    """
+    return [
+        key
+        for key, value in cls.__dict__.items()
+        if isinstance(value, property)
+    ]
+
+def all_class_properties(cls: type) -> list[str]:
+    """Collects all the @property methods on the passed class and all of the classes it inherited from.
+
+    Args:
+        cls (type): The object class type
+
+    Returns:
+        list[str]: A list of string keys for the classes properties
+    """
+    props = []
+    for kls in cls.mro():
+        props += class_properties(kls)
+    
+    return props
