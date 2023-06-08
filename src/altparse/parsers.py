@@ -141,6 +141,10 @@ class Unc0verParser:
             self.data = sorted(releases, key=lambda x: version.parse(x["tag_name"]))[-1] # only grab the release with the highest version
 
     @property
+    def downloadURL(self) -> str:
+        return "https://unc0ver.dev" + self.data["browser_download_url"]
+
+    @property
     def version(self) -> str:
         return self.data["tag_name"]
 
@@ -155,11 +159,9 @@ class Unc0verParser:
     def get_asset_metadata(self) -> dict[str]:
         """Returns a dictionary containing the downloadURL, size, bundleID, version
         """
-        download_url = "https://unc0ver.dev" + self.data["browser_download_url"]
-        ipa_path = download_tempfile(download_url)
+        ipa_path = download_tempfile(self.downloadURL)
         if ipa_path is not None:
             metadata = extract_altstore_metadata(ipa_path)
-        metadata["downloadURL"] = download_url
         return metadata
 
 class GithubParser:
@@ -245,6 +247,13 @@ class GithubParser:
             self.data = sorted(releases, key=lambda x: version.parse(x["tag_name"]))[-1] # only grab the release with the highest version
 
     @property
+    def downloadURL(self) -> str:
+        return self.data["asset"]["browser_download_url"]
+    @downloadURL.setter
+    def downloadURL(self, value: str):
+        self.data["asset"]["browser_download_url"] = value
+
+    @property
     def version(self) -> str:
         return self.data["tag_name"]
 
@@ -262,9 +271,7 @@ class GithubParser:
         Returns:
             dict: A dictionary containing the downloadURL, size, bundleID, version, and more.
         """
-        download_url = self.data["asset"]["browser_download_url"]
-
-        ipa_path = download_tempfile(download_url)
+        ipa_path = download_tempfile(self.downloadURL)
         if ipa_path is not None:
             payload_path = extract_ipa(ipa_path, self.extract_twice)
             if self.extract_twice:
@@ -274,9 +281,8 @@ class GithubParser:
             
             # Uploads the ipa to a separate GitHub repository after its been processed
             if self.upload_ipa_repo is not None:
-                download_url = upload_ipa_github(ipa_path, self.upload_ipa_repo, name=metadata["bundleIdentifier"], ver=metadata["version"])
-        
-        metadata["downloadURL"] = download_url
+                self.downloadURL = upload_ipa_github(ipa_path, self.upload_ipa_repo, name=metadata["bundleIdentifier"], ver=metadata["version"])
+
         return metadata
 
 class Parser(Enum):

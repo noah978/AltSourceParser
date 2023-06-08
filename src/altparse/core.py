@@ -164,26 +164,29 @@ class AltSourceManager:
                         app = self.src.apps[existingAppIDs.index(id)]
                         
                         # try to use absoluteVersion if the App contains it
-                        if version.parse(app.versions[0].absoluteVersion if app.versions[0].absoluteVersion else app.versions[0].version) < version.parse(parser.version) or (parser.prefer_date and parse_github_datetime(app.versions[0].date) < parse_github_datetime(parser.versionDate)): 
+                        new_ver = {
+                            "absoluteVersion": parser.version,
+                            "version": parser.version,
+                            "date": parser.versionDate,
+                            "size": 0,
+                            "downloadURL": parser.downloadURL
+                        }
+                        
+                        new_ver = AltSource.App.Version(new_ver)
+                        
+                        if app.latest_version() < new_ver or (parser.prefer_date and parse_github_datetime(app.latest_version(True).date) < parse_github_datetime(new_ver.date)): 
                             metadata = parser.get_asset_metadata()
                             
-                            new_ver = {
-                                "absoluteVersion": parser.version,
-                                "date": parser.versionDate,
-                                "localizedDescription": parser.versionDescription,
-                                "size": metadata.get("size"),
-                                "sha256": metadata.get("sha256"),
-                                "version": metadata.get("version") or parser.version,
-                                "buildVersion": metadata.get("buildVersion"),
-                                "downloadURL": metadata.get("downloadURL")
-                            }
-                            
-                            new_ver = AltSource.App.Version(new_ver)
+                            new_ver.version = metadata.get("version") or parser.version
+                            new_ver.buildVersion = metadata.get("buildVersion")
+                            new_ver.size = metadata.get("size")
+                            new_ver.sha256 = metadata.get("sha256")
+                            new_ver.localizedDescription = parser.versionDescription
                             
                             if not metadata.get("bundleIdentifier"):
                                 logging.error("No bundleIdentifier found in IPA.")
                             elif metadata["bundleIdentifier"] != app.bundleIdentifier:
-                                logging.warning(app.name + " BundleID has changed to " + metadata["bundleIdentifier"])
+                                logging.warning(app.name + " BundleID changed. This may cause issues with automatic updates.")
                                 app.bundleIdentifier = metadata["bundleIdentifier"]
                                 new_ver.localizedDescription += "\n\nNOTE: BundleIdentifier changed in this version and automatic updates have been disabled until manual install occurs."
 
