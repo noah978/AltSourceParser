@@ -83,7 +83,7 @@ class AltSourceParser:
                 id = app.appID or app.bundleIdentifier
                 if id in processed_keys: # appID / bundleID already exists in list of apps processed (meaning there's a duplicate)
                     index = processed_keys.index(id)
-                    if version.parse(processed_apps[index].versions[0].version) > version.parse(app.versions[0].version):
+                    if processed_apps[index].versions[0] > app.versions[0]:
                         continue
                     else:
                         processed_apps[index] = app

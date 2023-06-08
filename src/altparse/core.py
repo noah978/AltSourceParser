@@ -122,7 +122,7 @@ class AltSourceManager:
                             old_app = self.src.apps[existingAppIDs.index(bundleID)]
                             # version will be a lower value if the version is 'older'
                             new_ver = app.latest_version()
-                            if new_ver > self.src.apps[existingAppIDs.index(bundleID)].latest_version():
+                            if new_ver > old_app.latest_version():
                                 updatedAppsCount += 1
                                 update_props_from_new_version(old_app, new_ver) # handles incompatibilities with older format AltSources
                                 old_app.add_version(new_ver)

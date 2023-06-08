@@ -418,7 +418,7 @@ class AltSource(Base):
                     "appID": "com.example.app", 
                     "bundleIdentifier": "com.example.app", 
                     "developerName": "Example.com", 
-                    "versions": [],
+                    "versions": [AltSource.App.Version()],
                     "localizedDescription": "An app that is an example.",
                     "iconURL": "https://example.com/icon.png",
                     "appPermissions": AltSource.App.Permissions({
