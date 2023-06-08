@@ -263,5 +263,8 @@ class AltSourceManager:
         """
         full_src = dict(self.src) if only_standard_props else self.src.to_dict() 
         with open(alternate_dir or self.src.path, "w", encoding="utf-8") as fp:
-            json.dump(full_src, fp, indent = 2 if prettify else None)
+            if prettify:
+                json.dump(full_src, fp, sort_keys=False, indent=2)
+            else:
+                json.dump(full_src, fp)
             fp.write("\n") # add missing newline to EOF

@@ -268,8 +268,9 @@ class AltSource(Base):
             
             def __lt__(self, other):
                 if isinstance(other, self.__class__):
-                    if (self.absoluteVersion is not None and other.absoluteVersion is not None and 
-                        version.parse(self.absoluteVersion) < version.parse(other.absoluteVersion)): return True
+                    if self.absoluteVersion is not None and other.absoluteVersion is not None:
+                        if version.parse(self.absoluteVersion) < version.parse(other.absoluteVersion): return True
+                        else: return False
                     
                     if (version.parse(self.version) < version.parse(other.version)): return True
                     
@@ -330,12 +331,27 @@ class AltSource(Base):
                     if ipa_path is not None:
                         self.sha256 = extract_sha256(ipa_path)
             
+            ### Unofficial property ###
+            @property 
+            def absoluteVersion(self) -> str:
+                return self._src.get("absoluteVersion")
+            @absoluteVersion.setter
+            def absoluteVersion(self, value: str):
+                self._src["absoluteVersion"] = value
+        
             @property 
             def version(self) -> str:
                 return self._src.get("version")
             @version.setter
             def version(self, value: str):
                 self._src["version"] = value
+                
+            @property 
+            def buildVersion(self) -> str:
+                return self._src.get("buildVersion")
+            @buildVersion.setter
+            def buildVersion(self, value: str):
+                self._src["buildVersion"] = value
                 
             @property 
             def date(self) -> str:
@@ -345,6 +361,13 @@ class AltSource(Base):
                 self._src["date"] = value
                 
             @property 
+            def localizedDescription(self) -> str:
+                return self._src.get("localizedDescription")
+            @localizedDescription.setter
+            def localizedDescription(self, value: str):
+                self._src["localizedDescription"] = value
+                
+            @property 
             def downloadURL(self) -> str:
                 return self._src.get("downloadURL")
             @downloadURL.setter
@@ -352,10 +375,10 @@ class AltSource(Base):
                 self._src["downloadURL"] = value
                 
             @property 
-            def size(self) -> str:
+            def size(self) -> int:
                 return self._src.get("size")
             @size.setter
-            def size(self, value: str):
+            def size(self, value: int):
                 self._src["size"] = value
                 
             @property 
@@ -366,27 +389,19 @@ class AltSource(Base):
                 self._src["sha256"] = value
                 
             @property 
-            def localizedDescription(self) -> str:
-                return self._src.get("localizedDescription")
-            @localizedDescription.setter
-            def localizedDescription(self, value: str):
-                self._src["localizedDescription"] = value
-
-            # Start unofficial AltSource properties
-            
+            def minOSVersion(self) -> str:
+                return self._src.get("minOSVersion")
+            @minOSVersion.setter
+            def minOSVersion(self, value: str):
+                self._src["minOSVersion"] = value
+                
             @property 
-            def buildVersion(self) -> str:
-                return self._src.get("buildVersion")
-            @buildVersion.setter
-            def buildVersion(self, value: str):
-                self._src["buildVersion"] = value
+            def maxOSVersion(self) -> str:
+                return self._src.get("maxOSVersion")
+            @maxOSVersion.setter
+            def maxOSVersion(self, value: str):
+                self._src["maxOSVersion"] = value
             
-            @property 
-            def absoluteVersion(self) -> str:
-                return self._src.get("absoluteVersion")
-            @absoluteVersion.setter
-            def absoluteVersion(self, value: str):
-                self._src["absoluteVersion"] = value
         # End class Version
         
         _required_keys = ["name", "bundleIdentifier", "developerName", "versions", "localizedDescription", "iconURL"]
@@ -474,7 +489,7 @@ class AltSource(Base):
         def add_version(self, ver: Version):
             versions_list = [(ver.version,ver.buildVersion) for ver in self.versions]
             if (ver.version,ver.buildVersion) in versions_list:
-                logging.warning("Version already exists in AltSource. Automatically replaced with new one.")
+                logging.warning(f"Version already exists in {self.name}. Automatically replaced with new one.")
                 self.versions[versions_list.index((ver.version,ver.buildVersion))] = ver
             else:
                 self.versions.insert(0,ver)
@@ -520,15 +535,6 @@ class AltSource(Base):
             self._src["subtitle"] = value
             
         @property 
-        def versions(self) -> list[Version]:
-            return self._src.get("versions",[])
-        @versions.setter
-        def versions(self, value: list[Version]):
-            if self.versions is not None:
-                logging.warning(f"Entire `versions` section has been replaced for {self.name}.")
-            self._src["versions"] = value
-            
-        @property 
         def localizedDescription(self) -> str:
             return self._src.get("localizedDescription")
         @localizedDescription.setter
@@ -550,18 +556,20 @@ class AltSource(Base):
             self._src["tintColor"] = value
             
         @property 
-        def beta(self) -> bool:
-            return self._src.get("beta")
-        @beta.setter
-        def beta(self, value: bool):
-            self._src["beta"] = value
-            
-        @property 
         def screenshotURLs(self) -> list[str]:
             return self._src.get("screenshotURLs")
         @screenshotURLs.setter
         def screenshotURLs(self, value: list[str]):
             self._src["screenshotURLs"] = value
+        
+        @property 
+        def versions(self) -> list[Version]:
+            return self._src.get("versions",[])
+        @versions.setter
+        def versions(self, value: list[Version]):
+            if self.versions is not None:
+                logging.warning(f"Entire `versions` section has been replaced for {self.name}.")
+            self._src["versions"] = value
             
         @property 
         def appPermissions(self) -> Permissions:
@@ -569,6 +577,13 @@ class AltSource(Base):
         @appPermissions.setter
         def appPermissions(self, value: Permissions):
             self._src["appPermissions"] = value
+            
+        @property 
+        def beta(self) -> bool:
+            return self._src.get("beta")
+        @beta.setter
+        def beta(self, value: bool):
+            self._src["beta"] = value
             
         ### Deprecated properties ###
         
@@ -689,13 +704,6 @@ class AltSource(Base):
             self._src["title"] = value
             
         @property 
-        def name(self) -> str:
-            return self._src.get("name")
-        @name.setter
-        def name(self, value: str):
-            self._src["name"] = value
-            
-        @property 
         def identifier(self) -> str:
             return self._src.get("identifier")
         @identifier.setter
@@ -709,6 +717,13 @@ class AltSource(Base):
         @caption.setter
         def caption(self, value: str):
             self._src["caption"] = value
+            
+        @property 
+        def date(self) -> str:
+            return self._src.get("date")
+        @date.setter
+        def date(self, value: str):
+            self._src["date"] = value
             
         @property 
         def tintColor(self) -> str:
@@ -725,20 +740,6 @@ class AltSource(Base):
             self._src["imageURL"] = value
             
         @property 
-        def appID(self) -> str:
-            return self._src.get("appID")
-        @appID.setter
-        def appID(self, value: str):
-            self._src["appID"] = value
-            
-        @property 
-        def date(self) -> str:
-            return self._src.get("date")
-        @date.setter
-        def date(self, value: str):
-            self._src["date"] = value
-            
-        @property 
         def notify(self) -> bool:
             return self._src.get("notify")
         @notify.setter
@@ -751,6 +752,13 @@ class AltSource(Base):
         @url.setter
         def url(self, value: str):
             self._src["url"] = value
+            
+        @property 
+        def appID(self) -> str:
+            return self._src.get("appID")
+        @appID.setter
+        def appID(self, value: str):
+            self._src["appID"] = value
     # End class Article
     
     _required_keys = ["name", "identifier", "apps"]
@@ -768,7 +776,7 @@ class AltSource(Base):
             self._src["apps"] = [self.App(app) for app in src.get("apps", [])]
             if "news" in self._src.keys():
                 self._src["news"] = [self.Article(art) for art in src["news"]]
-            self.version = 2 # set current API version
+            self.apiVersion = "v2" # set current API version
             
             missing_keys = self.missing_keys()
             if missing_keys:
@@ -830,6 +838,15 @@ class AltSource(Base):
     def identifier(self, value: str):
         logging.warning(f"Source `identifier` changed from {self._src['identifier']} to {value}.")
         self._src["identifier"] = value
+        
+    ### Unofficial AltSource property ###
+    @property 
+    def apiVersion(self) -> str:
+        """Used to declare the AltSource API version."""
+        return self._src.get("apiVersion")
+    @apiVersion.setter
+    def apiVersion(self, value: str):
+        self._src["apiVersion"] = value
     
     @property 
     def subtitle(self) -> str:
@@ -844,13 +861,6 @@ class AltSource(Base):
     @description.setter
     def description(self, value: str):
         self._src["description"] = value
-    
-    @property 
-    def headerURL(self) -> str:
-        return self._src.get("headerURL")
-    @headerURL.setter
-    def headerURL(self, value: str):
-        self._src["headerURL"] = value
         
     @property 
     def iconURL(self) -> str:
@@ -858,6 +868,13 @@ class AltSource(Base):
     @iconURL.setter
     def iconURL(self, value: str):
         self._src["iconURL"] = value
+    
+    @property 
+    def headerURL(self) -> str:
+        return self._src.get("headerURL")
+    @headerURL.setter
+    def headerURL(self, value: str):
+        self._src["headerURL"] = value
         
     @property 
     def website(self) -> str:
@@ -903,24 +920,6 @@ class AltSource(Base):
     @userinfo.setter
     def userinfo(self, value: dict):
         self._src["userinfo"] = value
-        
-    # Start unofficial AltSource attributes.
-    
-    @property 
-    def sourceURL(self) -> str:
-        return self._src.get("sourceURL")
-    @sourceURL.setter
-    def sourceURL(self, value: str):
-        self._src["sourceURL"] = value
-    
-    @property 
-    def version(self) -> str:
-        """Used to declare the AltSource API version.
-        """
-        return self._src.get("version")
-    @version.setter
-    def version(self, value: str):
-        self._src["version"] = value
 # End class AltSource
 
 def altsource_from_file(filepath: Path | str) -> AltSource:
