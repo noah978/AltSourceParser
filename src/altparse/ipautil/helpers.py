@@ -17,7 +17,7 @@ import re
 import shutil
 from pathlib import Path
 from tempfile import mkdtemp
-from zipfile import ZipFile
+from zipfile import ZipFile, is_zipfile
 
 import requests
 from github3.repos.release import Release
@@ -36,8 +36,8 @@ def cleanup_tempdir(fp: Path):
     except Exception as err:
         logging.warning(f"Unable to cleanup files in temporary directory: {str(fp)} due to {err.__class__}")
 
-def download_tempfile(download_url: str) -> Path | None:
-    """Downloads file to a temporary directory. If a file cannot be downloaded, it returns None.
+def download_temp_ipa(download_url: str) -> Path | None:
+    """Downloads ipa file to a temporary directory. If a file cannot be downloaded or is not an IPA, it returns None.
 
     Args:
         download_url (str): The url of the file to be downloaded.
@@ -52,9 +52,12 @@ def download_tempfile(download_url: str) -> Path | None:
     with open(tempdir / filename, "wb") as file:
         file.write(r.content)
     try:
-        open(tempdir / filename, "r")
+        open(tempdir / filename, "rb")
     except OSError as err:
         logging.error("Could not find/open downloaded file.")
+        return None
+    if not is_zipfile(filename):
+        logging.error("Downloaded file is not an IPA file.")
         return None
     return tempdir / filename
 

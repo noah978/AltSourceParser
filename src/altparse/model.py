@@ -20,7 +20,7 @@ from packaging import version
 from altparse.errors import *
 from altparse.helpers import (all_class_properties, fmt_github_datetime,
                               parse_github_datetime, utcnow, equal_ignore_order)
-from altparse.ipautil.helpers import download_tempfile, extract_sha256 
+from altparse.ipautil.helpers import download_temp_ipa, extract_sha256 
 from altparse.ipautil.core import extract_permissions
 
 # Create a helper class in the namespace that acts as an intermediary to the logging.info to optionally silence the AltSource creation help text
@@ -322,14 +322,13 @@ class AltSource(Base):
                 """
                 return not self.missing_keys()
             
-            def calculate_sha256(self, ipa_path: Path | None):
+            def calculate_sha256(self, ipa_path: Path | None = None):
                 """Calculates the sha256 hash based on the downloadURL or passed `ipa_path` argument and sets the property.
                 """
-                if self.downloadURL is not None:
-                    if ipa_path is None: 
-                        ipa_path = download_tempfile(self.downloadURL)
-                    if ipa_path is not None:
-                        self.sha256 = extract_sha256(ipa_path)
+                if ipa_path is None and self.downloadURL is not None: 
+                    ipa_path = download_temp_ipa(self.downloadURL)
+                if ipa_path is not None:
+                    self.sha256 = extract_sha256(ipa_path)
             
             ### Unofficial property ###
             @property 
@@ -938,7 +937,10 @@ def altsource_from_file(filepath: Path | str) -> AltSource:
     
 def update_props_from_new_version(app: AltSource.App, new_ver: AltSource.App.Version):
     if new_ver.sha256 is None or app.appPermissions is None:
-        ipa_path = download_tempfile(new_ver.downloadURL)
+        ipa_path = download_temp_ipa(new_ver.downloadURL)
+        if ipa_path is None:
+            logging.warning(f"Broken download link for {app.name} ({new_ver.version}) prevented updating IPA based properties.")
+            return
         logging.debug(f"Updating {app.name} sha256 checksum.")
         new_ver.calculate_sha256(ipa_path)
         logging.debug(f"Collecting {app.name} entitlements and privacy permissions.")

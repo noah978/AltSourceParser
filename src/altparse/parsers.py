@@ -159,7 +159,7 @@ class Unc0verParser:
     def get_asset_metadata(self) -> dict[str]:
         """Returns a dictionary containing the downloadURL, size, bundleID, version
         """
-        ipa_path = download_tempfile(self.downloadURL)
+        ipa_path = download_temp_ipa(self.downloadURL)
         if ipa_path is not None:
             metadata = extract_altstore_metadata(ipa_path)
         return metadata
@@ -187,6 +187,8 @@ class GithubParser:
         self.asset_regex, self.extract_twice, self.upload_ipa_repo, self.prefer_date = asset_regex, extract_twice, upload_ipa_repo, prefer_date
         if url is not None:
             releases = requests.get(url).json()
+            repo_author = url.rstrip("/").split('/')[-2]
+            repo_name = url.rtrim("/").split('/')[-3]
         elif repo_author is not None and repo_name is not None:
             releases = requests.get("https://api.github.com/repos/{0}/{1}/releases".format(repo_author, repo_name)).json()
         else:
@@ -223,7 +225,7 @@ class GithubParser:
                 alter_tag_name(release)
                 ver = version.parse(release["tag_name"])
                 if isinstance(ver, version.LegacyVersion):
-                    logging.warning(f"Invalid GitHub tag version not considered: {ver.base_version}")
+                    logging.warning(f"Invalid GitHub tag version for \"{repo_author}/{repo_name}\" not considered: {ver.base_version}")
                     releases.pop(index)
         
         #### Parse the correct release ####
@@ -271,7 +273,7 @@ class GithubParser:
         Returns:
             dict: A dictionary containing the downloadURL, size, bundleID, version, and more.
         """
-        ipa_path = download_tempfile(self.downloadURL)
+        ipa_path = download_temp_ipa(self.downloadURL)
         if ipa_path is not None:
             payload_path = extract_ipa(ipa_path, self.extract_twice)
             if self.extract_twice:

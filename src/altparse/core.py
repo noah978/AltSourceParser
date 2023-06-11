@@ -20,7 +20,7 @@ from packaging import version
 from altparse.errors import *
 from altparse.helpers import *
 from altparse.ipautil import extract_altstore_metadata
-from altparse.ipautil.helpers import download_tempfile
+from altparse.ipautil.helpers import download_temp_ipa
 from altparse.model import AltSource, update_props_from_new_version
 from altparse.parsers import Parser
 
@@ -42,11 +42,11 @@ class AltSourceManager:
         else:
             self.src = src
 
-    def create_app(self, download_url: str = "", ipa_path: Path | str = None, **kwargs) -> AltSource.App:
+    def create_app(self, download_url: str = "", ipa_path: Path | str = None, **kwargs) -> AltSource.App | None:
         if download_url=="":
             logging.warning("Users will be unable to download to download the app until a valid download url is set.")
         if not ipa_path and is_url(download_url):
-            ipa_path = download_tempfile(download_url)
+            ipa_path = download_temp_ipa(download_url)
         if ipa_path:
             if isinstance(str, ipa_path):
                 ipa_path = Path(ipa_path)
@@ -130,6 +130,7 @@ class AltSourceManager:
                             self.src.apps[existingAppIDs.index(bundleID)] = app # note that this actually updates the app regardless of whether the version is newer
                         else:
                             addedAppsCount += 1
+                            update_props_from_new_version(app, app.latest_version())
                             self.src.apps.append(app)
 
                     if not data.get("ignoreNews"):
@@ -221,8 +222,8 @@ class AltSourceManager:
         """Updates the sha256 hashes for the apps in the AltSource.
 
         Args:
-            only_latest (bool, optional): Only updates missing hashes for the latest version. Defaults to True.
-            force_update (bool, optional): Forces every app, every version to update its hash. Defaults to False.
+            only_latest (bool, optional): Only updates missing hashes for the latest version, otherwise all versions are updated. Defaults to True.
+            force_update (bool, optional): Forces version hashes to be recalculated even if they already have one. Defaults to False.
         """
         for app in self.src.apps:
             if only_latest:
