@@ -71,22 +71,28 @@ class IPA_Info:
     @property 
     def Name(self) -> str:
         return self._plist.get("CFBundleName")
+    
+    @property 
+    def LongVersion(self) -> str:
+        """Incredibly verbose version string, typically never used.
+        """
+        return self._plist.get("CFBundleLongVersionString")
         
     @property 
     def ShortVersion(self) -> str:
         """The most commonly used and more accurate version designed for display to end users.
         """
-        return self._plist.get("CFBundleShortVersionString").lstrip("v")
-        
-    @property 
-    def SupportedPlatforms(self) -> list[str]:
-        return self._plist.get("CFBundleSupportedPlatforms")
-        
+        return self._plist.get("CFBundleShortVersionString")
+    
     @property 
     def Version(self) -> str:
         """Version that is designed to indicate the internal build version, sometimes only contains one digit or the full version string.
         """
         return self._plist.get("CFBundleVersion")
+        
+    @property 
+    def SupportedPlatforms(self) -> list[str]:
+        return self._plist.get("CFBundleSupportedPlatforms")
     
     @property 
     def MinimumOSVersion(self) -> str:
