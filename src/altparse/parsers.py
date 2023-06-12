@@ -274,16 +274,18 @@ class GithubParser:
             dict: A dictionary containing the downloadURL, size, bundleID, version, and more.
         """
         ipa_path = download_temp_ipa(self.downloadURL)
-        if ipa_path is not None:
-            payload_path = extract_ipa(ipa_path, self.extract_twice)
-            if self.extract_twice:
-                ipa_path = payload_path.parent / "temp2.ipa"
-            plist_path = list(payload_path.rglob("Info.plist"))[0] # locate the Info.plist path within the extracted data
-            metadata = extract_altstore_metadata(ipa_path=ipa_path, plist_path=plist_path)
-            
-            # Uploads the ipa to a separate GitHub repository after its been processed
-            if self.upload_ipa_repo is not None:
-                self.downloadURL = upload_ipa_github(ipa_path, self.upload_ipa_repo, name=metadata["bundleIdentifier"], ver=metadata["version"])
+        if ipa_path is None:
+            return None
+        
+        payload_path = extract_ipa(ipa_path, self.extract_twice)
+        if self.extract_twice:
+            ipa_path = payload_path.parent / "temp2.ipa"
+        plist_path = list(payload_path.rglob("Info.plist"))[0] # locate the Info.plist path within the extracted data
+        metadata = extract_altstore_metadata(ipa_path=ipa_path, plist_path=plist_path)
+        
+        # Uploads the ipa to a separate GitHub repository after its been processed
+        if self.upload_ipa_repo is not None:
+            self.downloadURL = upload_ipa_github(ipa_path, self.upload_ipa_repo, name=metadata["bundleIdentifier"], ver=metadata["version"])
 
         return metadata
 
