@@ -177,6 +177,9 @@ class AltSourceManager:
                         
                         if app.latest_version() < new_ver or (parser.prefer_date and parse_github_datetime(app.latest_version(True).date) < parse_github_datetime(new_ver.date)): 
                             metadata = parser.get_asset_metadata()
+                            if metadata is None:
+                                logging.error(f"Unable to retrieve metadata for {app.name} ({new_ver.absoluteVersion}).")
+                                continue
                             
                             new_ver.version = metadata.get("version") or parser.version
                             new_ver.buildVersion = metadata.get("buildVersion")
