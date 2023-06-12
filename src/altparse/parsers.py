@@ -192,7 +192,7 @@ class GithubParser:
         elif repo_author is not None and repo_name is not None:
             releases = requests.get("https://api.github.com/repos/{0}/{1}/releases".format(repo_author, repo_name)).json()
         else:
-            raise ValueError("Either the api url or both the repo name and author are required.")
+            raise InsufficientArgsError("Either the api url or both the repo name and author are required.")
         if isinstance(releases, dict):
             if releases.get("message") == "Not Found":
                 raise GitHubError("Github Repo not found.")

@@ -20,3 +20,7 @@ class GitHubError(AltSourceError):
 class ArgumentTypeError(AltSourceError):
     """Occurs when an argument is not of the correct type."""
     pass
+
+class InsufficientArgsError(AltSourceError):
+    """Occurs when there are not enough arguments passed."""
+    pass
